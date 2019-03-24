@@ -4,3 +4,4 @@ version = "0.1.0"
 authors = ["Sébastien Willmann <sebastien.willmann@gmail.com>"]
 
 [dependencies]
+im = "^12.3.3"
