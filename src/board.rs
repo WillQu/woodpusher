@@ -1,6 +1,5 @@
-extern crate im;
-
-use board::im::hashmap::HashMap;
+use regex::Regex;
+use im::hashmap::HashMap;
 
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub enum PieceType {
@@ -41,7 +40,7 @@ impl Player {
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct Board {
-    squares: HashMap<String, Piece>,
+    squares: HashMap<Position, Piece>,
 }
 
 use self::PieceType::*;
@@ -50,76 +49,76 @@ impl Board {
 
     pub fn starting_position() -> Board {
         let mut board_map = HashMap::new();
-        board_map.insert(String::from("e1"), Piece {
+        board_map.insert(Position::from("e1").unwrap(), Piece {
             piece_type: King,
             player: White,
         });
-        board_map.insert(String::from("e8"), Piece {
+        board_map.insert(Position::from("e8").unwrap(), Piece {
             piece_type: King,
             player: Black,
         });
-        board_map.insert(String::from("d1"), Piece {
+        board_map.insert(Position::from("d1").unwrap(), Piece {
             piece_type: Queen,
             player: White,
         });
-        board_map.insert(String::from("d8"), Piece {
+        board_map.insert(Position::from("d8").unwrap(), Piece {
             piece_type: Queen,
             player: Black,
         });
-        board_map.insert(String::from("c1"), Piece {
+        board_map.insert(Position::from("c1").unwrap(), Piece {
             piece_type: Bishop,
             player: White,
         });
-        board_map.insert(String::from("c8"), Piece {
+        board_map.insert(Position::from("c8").unwrap(), Piece {
             piece_type: Bishop,
             player: Black,
         });
-        board_map.insert(String::from("f1"), Piece {
+        board_map.insert(Position::from("f1").unwrap(), Piece {
             piece_type: Bishop,
             player: White,
         });
-        board_map.insert(String::from("f8"), Piece {
+        board_map.insert(Position::from("f8").unwrap(), Piece {
             piece_type: Bishop,
             player: Black,
         });
-        board_map.insert(String::from("b1"), Piece {
+        board_map.insert(Position::from("b1").unwrap(), Piece {
             piece_type: Knight,
             player: White,
         });
-        board_map.insert(String::from("b8"), Piece {
+        board_map.insert(Position::from("b8").unwrap(), Piece {
             piece_type: Knight,
             player: Black,
         });
-        board_map.insert(String::from("g1"), Piece {
+        board_map.insert(Position::from("g1").unwrap(), Piece {
             piece_type: Knight,
             player: White,
         });
-        board_map.insert(String::from("g8"), Piece {
+        board_map.insert(Position::from("g8").unwrap(), Piece {
             piece_type: Knight,
             player: Black,
         });
-        board_map.insert(String::from("a1"), Piece {
+        board_map.insert(Position::from("a1").unwrap(), Piece {
             piece_type: Rook,
             player: White,
         });
-        board_map.insert(String::from("a8"), Piece {
+        board_map.insert(Position::from("a8").unwrap(), Piece {
             piece_type: Rook,
             player: Black,
         });
-        board_map.insert(String::from("h1"), Piece {
+        board_map.insert(Position::from("h1").unwrap(), Piece {
             piece_type: Rook,
             player: White,
         });
-        board_map.insert(String::from("h8"), Piece {
+        board_map.insert(Position::from("h8").unwrap(), Piece {
             piece_type: Rook,
             player: Black,
         });
         for c in "abcdefgh".chars() {
-            board_map.insert(format!("{}2", c), Piece {
+            board_map.insert(Position::from(&format!("{}2", c)).unwrap(), Piece {
                 piece_type: Pawn,
                 player: White,
             });
-            board_map.insert(format!("{}7", c), Piece {
+            board_map.insert(Position::from(&format!("{}7", c)).unwrap(), Piece {
                 piece_type: Pawn,
                 player: Black,
             });
@@ -130,15 +129,38 @@ impl Board {
     }
 
     pub fn get(&self, coordinates: &str) -> Option<&Piece> {
-        self.squares.get(coordinates)
+        Position::from(coordinates).and_then(|pos| self.squares.get(&pos))
     }
 
     pub fn put(&self, coordinates: &str, piece: Piece) -> Board {
-        Board{squares: self.squares.update(coordinates.to_string(), piece)}
+        Position::from(coordinates)
+            .map_or_else(|| self.clone(), |pos| Board{squares: self.squares.update(pos, piece)})
+        
     }
 
     pub fn remove(&self, coordinates: &str) -> Board {
-        Board {squares: self.squares.without(coordinates)}
+        Position::from(coordinates)
+            .map_or_else(|| self.clone(), |pos| Board {squares: self.squares.without(&pos)})
+    }
+}
+
+#[derive(PartialEq, Eq, Hash, Debug, Clone)]
+struct Position {
+    pos: String,
+}
+
+
+impl Position {
+
+    fn from(pos: &str) -> Option<Position> {
+        lazy_static! {
+            static ref POS_REGEX: Regex = Regex::new("^[a-h][1-8]$").unwrap();
+        }
+        if POS_REGEX.is_match(pos) {
+            Some(Position{pos: String::from(pos)})
+        } else {
+            None
+        }
     }
 }
 
@@ -148,6 +170,7 @@ mod tests {
     use board::Piece;
     use board::PieceType::*;
     use board::Player::*;
+    use board::Position;
 
     #[test]
     fn new_board() {
@@ -175,5 +198,41 @@ mod tests {
             assert_eq!(result.get(&format!("{}2", c)), Some(& Piece { piece_type: Pawn, player: White}));
             assert_eq!(result.get(&format!("{}7", c)), Some(& Piece { piece_type: Pawn, player: Black}));
         }
+    }
+
+    #[test]
+    fn empty_pos() {
+        // Given
+        let pos = "";
+
+        // When
+        let result = Position::from(pos);
+
+        // Then
+        assert_eq!(result, None);
+    }
+
+    #[test]
+    fn ok_pos() {
+        // Given
+        let pos = "a1";
+
+        // When
+        let result = Position::from(pos);
+
+        // Then
+        assert_eq!(result, Some(Position{pos: String::from("a1")}));
+    }
+
+    #[test]
+    fn invalid_pos() {
+        // Given
+        let pos = "~|";
+
+        // When
+        let result = Position::from(pos);
+
+        // Then
+        assert_eq!(result, None);
     }
 }
