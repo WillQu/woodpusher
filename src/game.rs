@@ -5,11 +5,14 @@ use board::Piece;
 #[derive(Clone)]
 struct Game {
     board: Board,
+    player_turn: Player,
 }
+
 impl Game {
     fn new() -> Game {
         Game {
-            board: Board::starting_position()
+            board: Board::starting_position(),
+            player_turn: Player::White,
         }
     }
 
@@ -18,20 +21,18 @@ impl Game {
     }
 
     fn turn(&self) -> Player {
-        Player::White
+        self.player_turn
     }
 
     fn apply_move(&self, from: &str, to: &str) -> Game {
-        self.board
-            .get(from)
+        self.get_piece_at(from)
             .map_or_else(
                 || self.clone(),
-                |piece| self.with_board(self.board.put(to, *piece).remove(from))
+                |piece| Game{
+                    board: self.board.put(to, *piece).remove(from),
+                    player_turn: self.turn().opponent(),
+                }
             )
-    }
-
-    fn with_board(&self, board: Board) -> Game {
-        Game {board: board}
     }
 
     fn get_piece_at(&self, position: &str) -> Option<&Piece> {
@@ -65,6 +66,7 @@ mod tests {
         // Then
         assert_eq!(game_after_move.get_piece_at("e4"), Some(&Piece::new(PieceType::Pawn, Player::White)));
         assert_eq!(game_after_move.get_piece_at("e2"), None);
+        assert_eq!(game_after_move.turn(), Player::Black);
     }
 
     #[test]
@@ -89,5 +91,17 @@ mod tests {
 
         // Then
         assert_eq!(game_after_move.get_piece_at("f3"), Some(&Piece::new(PieceType::Knight, Player::White)));
+    }
+
+    #[test]
+    fn second_move() {
+        // Given
+        let game = Game::new();
+
+        // When
+        let game_after_move = game.apply_move("e2", "e4").apply_move("e7", "e5");
+
+        // Then
+        assert_eq!(game_after_move.turn(), Player::White);
     }
 }

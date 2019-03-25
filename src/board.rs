@@ -30,6 +30,15 @@ pub enum Player {
     Black,
 }
 
+impl Player {
+    pub fn opponent(&self) -> Player {
+        match self {
+            White => Black,
+            Black => White,
+        }
+    }
+}
+
 #[derive(PartialEq, Debug, Clone)]
 pub struct Board {
     squares: HashMap<String, Piece>,
