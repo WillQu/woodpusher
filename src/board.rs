@@ -21,6 +21,14 @@ impl Piece {
     pub fn new(piece_type: PieceType, player: Player) -> Piece {
         Piece {piece_type: piece_type, player: player}
     }
+
+    pub fn piece_type(&self) -> PieceType {
+        self.piece_type
+    }
+
+    pub fn player(&self) -> Player {
+        self.player
+    }
 }
 
 #[derive(PartialEq, Debug, Copy, Clone)]
