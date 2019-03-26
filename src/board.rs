@@ -43,11 +43,8 @@ pub struct Board {
     squares: HashMap<Position, Piece>,
 }
 
-use self::PieceType::*;
-use self::Player::*;
-impl Board {
-
-    pub fn starting_position() -> Board {
+lazy_static! {
+    static ref STARTING_POS: Board = {
         let mut board_map = HashMap::new();
         board_map.insert(Position::from("e1").unwrap(), Piece {
             piece_type: King,
@@ -126,6 +123,14 @@ impl Board {
         Board {
             squares: board_map
         }
+    };
+}
+
+use self::PieceType::*;
+use self::Player::*;
+impl Board {
+    pub fn starting_position() -> Board {
+        STARTING_POS.clone()
     }
 
     pub fn get(&self, coordinates: &str) -> Option<&Piece> {
