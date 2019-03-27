@@ -1,3 +1,6 @@
+use std::fmt;
+use std::fmt::Display;
+
 use regex::Regex;
 use im::hashmap::HashMap;
 
@@ -62,6 +65,12 @@ impl Position {
         } else {
             None
         }
+    }
+}
+
+impl Display for Position {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.pos)
     }
 }
 
