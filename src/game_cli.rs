@@ -1,4 +1,5 @@
 use board::Board;
+use board::Position;
 use board::Piece;
 use board::PieceType::*;
 use board::Player::*;
@@ -8,7 +9,7 @@ pub fn show_board(board: &Board) -> String {
     for line in "87654321".chars() {
         for row in "abcdefgh".chars() {
             result.push(board
-                .get(&[row, line].into_iter().collect::<String>())
+                .get(&Position::from(&[row, line].into_iter().collect::<String>()).unwrap())
                 .map_or_else(|| '·', |piece| show_piece(piece))
             );
             result.push(' ');

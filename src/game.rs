@@ -1,4 +1,5 @@
 use board::Board;
+use board::Position;
 use board::Player;
 use board::Piece;
 
@@ -24,7 +25,7 @@ impl Game {
         self.player_turn
     }
 
-    fn apply_move(&self, from: &str, to: &str) -> Game {
+    fn apply_move(&self, from: &Position, to: Position) -> Game {
         self.get_piece_at(from)
             .map_or_else(
                 || self.clone(),
@@ -35,7 +36,7 @@ impl Game {
             )
     }
 
-    fn get_piece_at(&self, position: &str) -> Option<&Piece> {
+    fn get_piece_at(&self, position: &Position) -> Option<&Piece> {
         self.board.get(position)
     }
 }
@@ -44,6 +45,7 @@ impl Game {
 mod tests {
     use game::*;
     use board::PieceType;
+    use board::Position;
 
     #[test]
     fn new_game() {
@@ -61,11 +63,11 @@ mod tests {
         let game = Game::new();
 
         // When
-        let game_after_move = game.apply_move("e2", "e4");
+        let game_after_move = game.apply_move(&Position::from("e2").unwrap(), Position::from("e4").unwrap());
 
         // Then
-        assert_eq!(game_after_move.get_piece_at("e4"), Some(&Piece::new(PieceType::Pawn, Player::White)));
-        assert_eq!(game_after_move.get_piece_at("e2"), None);
+        assert_eq!(game_after_move.get_piece_at(&Position::from("e4").unwrap()), Some(&Piece::new(PieceType::Pawn, Player::White)));
+        assert_eq!(game_after_move.get_piece_at(&Position::from("e2").unwrap()), None);
         assert_eq!(game_after_move.turn(), Player::Black);
     }
 
@@ -75,10 +77,10 @@ mod tests {
         let game = Game::new();
 
         // When
-        let game_after_move = game.apply_move("d2", "d4");
+        let game_after_move = game.apply_move(&Position::from("d2").unwrap(), Position::from("d4").unwrap());
 
         // Then
-        assert_eq!(game_after_move.get_piece_at("d4"), Some(&Piece::new(PieceType::Pawn, Player::White)));
+        assert_eq!(game_after_move.get_piece_at(&Position::from("d4").unwrap()), Some(&Piece::new(PieceType::Pawn, Player::White)));
     }
 
     #[test]
@@ -87,10 +89,10 @@ mod tests {
         let game = Game::new();
 
         // When
-        let game_after_move = game.apply_move("g1", "f3");
+        let game_after_move = game.apply_move(&Position::from("g1").unwrap(), Position::from("f3").unwrap());
 
         // Then
-        assert_eq!(game_after_move.get_piece_at("f3"), Some(&Piece::new(PieceType::Knight, Player::White)));
+        assert_eq!(game_after_move.get_piece_at(&Position::from("f3").unwrap()), Some(&Piece::new(PieceType::Knight, Player::White)));
     }
 
     #[test]
@@ -99,7 +101,9 @@ mod tests {
         let game = Game::new();
 
         // When
-        let game_after_move = game.apply_move("e2", "e4").apply_move("e7", "e5");
+        let game_after_move = game
+            .apply_move(&Position::from("e2").unwrap(), Position::from("e4").unwrap())
+            .apply_move(&Position::from("e7").unwrap(), Position::from("e5").unwrap());
 
         // Then
         assert_eq!(game_after_move.turn(), Player::White);
