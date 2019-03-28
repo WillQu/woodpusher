@@ -29,11 +29,19 @@ impl Game {
         self.get_piece_at(from)
             .map_or_else(
                 || Err(format!("No piece at {}", from)),
-                |piece| Ok(Game{
-                    board: self.board.put(to, *piece).remove(from),
-                    player_turn: self.turn().opponent(),
-                })
+                |piece| self.apply_move_to_piece(from, to, piece)
             )
+    }
+
+    fn apply_move_to_piece(&self, from: &Position, to: Position, piece: &Piece) -> Result<Game, String> {
+        if piece.player() == self.turn() {
+            Ok(Game {
+                board: self.board.put(to, *piece).remove(from),
+                player_turn: self.turn().opponent(),
+            })
+        } else {
+            Err(String::from("Can’t move pieces from the other player"))
+        }
     }
 
     fn get_piece_at(&self, position: &Position) -> Option<&Piece> {
@@ -107,5 +115,18 @@ mod tests {
 
         // Then
         assert_eq!(game_after_move.map(|game| game.turn()), Ok(Player::White));
+    }
+
+    #[test]
+    fn do_not_move_opponent_pieces() {
+        // Given
+        let game = Game::new();
+
+        // When
+        let game_after_move = game
+            .apply_move(&Position::from("e7").unwrap(), Position::from("e5").unwrap());
+
+        // Then
+        assert!(game_after_move.is_err());
     }
 }
