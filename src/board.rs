@@ -49,9 +49,10 @@ impl Player {
     }
 }
 
-#[derive(PartialEq, Eq, Hash, Debug, Clone)]
+#[derive(PartialEq, Eq, Hash, Debug, Copy, Clone)]
 pub struct Position {
-    pos: String,
+    column: char,
+    row: char,
 }
 
 
@@ -61,7 +62,8 @@ impl Position {
             static ref POS_REGEX: Regex = Regex::new("^[a-h][1-8]$").unwrap();
         }
         if POS_REGEX.is_match(pos) {
-            Some(Position {pos: String::from(pos)})
+            let bytes = pos.as_bytes();
+            Some(Position {column: bytes[0] as char, row: bytes[1] as char})
         } else {
             None
         }
@@ -70,7 +72,7 @@ impl Position {
 
 impl Display for Position {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.pos)
+        write!(f, "{}{}", self.column, self.row)
     }
 }
 
@@ -240,7 +242,7 @@ mod tests {
         let result = Position::from(pos);
 
         // Then
-        assert_eq!(result, Some(Position {pos: String::from("a1")}));
+        assert_eq!(result.unwrap().to_string(), "a1");
     }
 
     #[test]
