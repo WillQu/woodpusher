@@ -68,6 +68,22 @@ impl Position {
             None
         }
     }
+
+    pub fn new(column: char, row: char) -> Option<Position> {
+        if column >= 'a' && column <= 'h' && row >= '1' && row <= '8' {
+            Some(Position{row: row, column: column})
+        } else {
+            None
+        }
+    }
+
+    pub fn column(&self) -> char {
+        self.column
+    }
+
+    pub fn row(&self) -> char {
+        self.row
+    }
 }
 
 impl Display for Position {
@@ -171,17 +187,24 @@ impl Board {
         STARTING_POS.clone()
     }
 
+    pub fn empty() -> Board {
+        Board {squares: HashMap::new()}
+    }
+
     pub fn get(&self, position: &Position) -> Option<&Piece> {
         self.squares.get(position)
     }
 
     pub fn put(&self, position: Position, piece: Piece) -> Board {
         Board{squares: self.squares.update(position, piece)}
-        
     }
 
     pub fn remove(&self, position: &Position) -> Board {
         Board {squares: self.squares.without(&position)}
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = &(Position, Piece)> {
+        self.squares.iter()
     }
 }
 

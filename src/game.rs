@@ -2,6 +2,7 @@ use board::Board;
 use board::Position;
 use board::Player;
 use board::Piece;
+use im::Vector;
 
 #[derive(Clone)]
 struct Game {
@@ -13,6 +14,13 @@ impl Game {
     fn new() -> Game {
         Game {
             board: Board::starting_position(),
+            player_turn: Player::White,
+        }
+    }
+
+    fn from_board(board: Board) -> Game {
+        Game {
+            board: board,
             player_turn: Player::White,
         }
     }
@@ -47,13 +55,36 @@ impl Game {
     fn get_piece_at(&self, position: &Position) -> Option<&Piece> {
         self.board.get(position)
     }
+
+    fn list_moves(&self) -> Vector<Move> {
+        self
+            .board
+            .iter()
+            .map(|(key, value)| self.create_move(*key, Position::new(key.column(), (key.row() as u8 + 1) as char).unwrap()))
+            .collect()
+    }
+
+    fn create_move(&self, from: Position, to: Position) -> Move {
+        Move{from: from, to: to}
+    }
+}
+
+#[derive(Copy, Clone, PartialEq, Debug)]
+struct Move {
+    from: Position,
+    to: Position,
 }
 
 #[cfg(test)]
 mod tests {
+    use spectral::prelude::*;
+
     use game::*;
     use board::PieceType;
+    use board::Player;
     use board::Position;
+    use board::Board;
+    use board::Piece;
 
     #[test]
     fn new_game() {
@@ -128,5 +159,31 @@ mod tests {
 
         // Then
         assert!(game_after_move.is_err());
+    }
+
+    #[test]
+    fn list_move_pawn_simple_white() {
+        // Given
+        let board = Board::empty().put(Position::from("e3").unwrap(), Piece::new(PieceType::Pawn, Player::White));
+        let game = Game::from_board(board);
+
+        // When
+        let result = game.list_moves();
+
+        // Then
+        assert_that!(result).equals_iterator(&[game.create_move(Position::from("e3").unwrap(), Position::from("e4").unwrap())].iter())
+    }
+
+    #[test]
+    fn list_move_pawn_simple_white2() {
+        // Given
+        let board = Board::empty().put(Position::from("h6").unwrap(), Piece::new(PieceType::Pawn, Player::White));
+        let game = Game::from_board(board);
+
+        // When
+        let result = game.list_moves();
+
+        // Then
+        assert_that!(result).equals_iterator(&[game.create_move(Position::from("h6").unwrap(), Position::from("h7").unwrap())].iter())
     }
 }
