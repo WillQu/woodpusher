@@ -18,10 +18,10 @@ impl Game {
         }
     }
 
-    fn from_board(board: Board) -> Game {
+    fn from_board(board: Board, player: Player) -> Game {
         Game {
             board: board,
-            player_turn: Player::White,
+            player_turn: player,
         }
     }
 
@@ -60,12 +60,20 @@ impl Game {
         self
             .board
             .iter()
-            .map(|(key, value)| self.create_move(*key, Position::new(key.column(), (key.row() as u8 + 1) as char).unwrap()))
+            .map(|(key, value)| self.list_pawn_moves(key, value))
             .collect()
     }
 
     fn create_move(&self, from: Position, to: Position) -> Move {
         Move{from: from, to: to}
+    }
+
+    fn list_pawn_moves(&self, key: &Position, value: &Piece) -> Move {
+        let incr = |i| match value.player() {
+            Player::White => i+1,
+            Player::Black => i-1,
+        };
+        self.create_move(*key, Position::new(key.column(), incr(key.row() as u8) as char).unwrap())
     }
 }
 
@@ -165,7 +173,7 @@ mod tests {
     fn list_move_pawn_simple_white() {
         // Given
         let board = Board::empty().put(Position::from("e3").unwrap(), Piece::new(PieceType::Pawn, Player::White));
-        let game = Game::from_board(board);
+        let game = Game::from_board(board, Player::White);
 
         // When
         let result = game.list_moves();
@@ -178,12 +186,25 @@ mod tests {
     fn list_move_pawn_simple_white2() {
         // Given
         let board = Board::empty().put(Position::from("h6").unwrap(), Piece::new(PieceType::Pawn, Player::White));
-        let game = Game::from_board(board);
+        let game = Game::from_board(board, Player::White);
 
         // When
         let result = game.list_moves();
 
         // Then
         assert_that!(result).equals_iterator(&[game.create_move(Position::from("h6").unwrap(), Position::from("h7").unwrap())].iter())
+    }
+
+    #[test]
+    fn list_move_pawn_simple_black() {
+        // Given
+        let board = Board::empty().put(Position::from("h6").unwrap(), Piece::new(PieceType::Pawn, Player::Black));
+        let game = Game::from_board(board, Player::Black);
+
+        // When
+        let result = game.list_moves();
+
+        // Then
+        assert_that!(result).equals_iterator(&[game.create_move(Position::from("h6").unwrap(), Position::from("h5").unwrap())].iter())
     }
 }
