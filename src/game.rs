@@ -60,6 +60,7 @@ impl Game {
         self
             .board
             .iter()
+            .filter(|(_, value)| value.player() == self.turn())
             .map(|(key, value)| self.list_pawn_moves(key, value))
             .collect()
     }
@@ -206,5 +207,18 @@ mod tests {
 
         // Then
         assert_that!(result).equals_iterator(&[game.create_move(Position::from("h6").unwrap(), Position::from("h5").unwrap())].iter())
+    }
+
+    #[test]
+    fn list_move_only_current_player() {
+        // Given
+        let board = Board::empty().put(Position::from("h6").unwrap(), Piece::new(PieceType::Pawn, Player::Black));
+        let game = Game::from_board(board, Player::White);
+
+        // When
+        let result = game.list_moves();
+
+        // Then
+        assert_that!(result.is_empty()).is_true();
     }
 }
