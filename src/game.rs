@@ -61,7 +61,7 @@ impl Game {
             .board
             .iter()
             .filter(|(_, value)| value.player() == self.turn())
-            .map(|(key, value)| self.list_pawn_moves(key, value))
+            .flat_map(|(key, value)| self.list_pawn_moves(key, value))
             .collect()
     }
 
@@ -69,12 +69,19 @@ impl Game {
         Move{from: from, to: to}
     }
 
-    fn list_pawn_moves(&self, key: &Position, value: &Piece) -> Move {
+    fn list_pawn_moves(&self, key: &Position, value: &Piece) -> Vector<Move> {
         let incr = |i| match value.player() {
             Player::White => i+1,
             Player::Black => i-1,
         };
-        self.create_move(*key, Position::new(key.column(), incr(key.row() as u8) as char).unwrap())
+        if (self.turn() == Player::White && key.row() == '2') || (self.turn() == Player::Black && key.row() == '7') {
+            vector![
+                self.create_move(*key, Position::new(key.column(), incr(key.row() as u8) as char).unwrap()),
+                self.create_move(*key, Position::new(key.column(), incr(incr(key.row() as u8)) as char).unwrap()),
+            ]
+        } else {
+            vector![self.create_move(*key, Position::new(key.column(), incr(key.row() as u8) as char).unwrap())]
+        }
     }
 }
 
@@ -220,5 +227,55 @@ mod tests {
 
         // Then
         assert_that!(result.is_empty()).is_true();
+    }
+
+    #[test]
+    fn list_move_pawn_starting_point_white() {
+        // Given
+        let board = Board::empty().put(Position::from("e2").unwrap(), Piece::new(PieceType::Pawn, Player::White));
+        let game = Game::from_board(board, Player::White);
+
+        // When
+        let result: Vector<Move> = game.list_moves();
+
+        // Then
+        assert_eq!(result.len(), 2);
+        assert_that!(result).contains_all_of(&&[
+            game.create_move(Position::from("e2").unwrap(), Position::from("e3").unwrap()),
+            game.create_move(Position::from("e2").unwrap(), Position::from("e4").unwrap()),
+        ]);
+    }
+
+    #[test]
+    fn list_move_pawn_starting_point_black_with_white() {
+        // Given
+        let board = Board::empty().put(Position::from("e7").unwrap(), Piece::new(PieceType::Pawn, Player::White));
+        let game = Game::from_board(board, Player::White);
+
+        // When
+        let result: Vector<Move> = game.list_moves();
+
+        // Then
+        assert_eq!(result.len(), 1);
+        assert_that!(result).contains_all_of(&&[
+            game.create_move(Position::from("e7").unwrap(), Position::from("e8").unwrap()),
+        ]);
+    }
+
+    #[test]
+    fn list_move_pawn_starting_point_black() {
+        // Given
+        let board = Board::empty().put(Position::from("e7").unwrap(), Piece::new(PieceType::Pawn, Player::Black));
+        let game = Game::from_board(board, Player::Black);
+
+        // When
+        let result: Vector<Move> = game.list_moves();
+
+        // Then
+        assert_eq!(result.len(), 2);
+        assert_that!(result).contains_all_of(&&[
+            game.create_move(Position::from("e7").unwrap(), Position::from("e6").unwrap()),
+            game.create_move(Position::from("e7").unwrap(), Position::from("e5").unwrap()),
+        ]);
     }
 }
