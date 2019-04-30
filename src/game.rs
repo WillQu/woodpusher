@@ -4,10 +4,11 @@ use board::Player;
 use board::Piece;
 use im::Vector;
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 struct Game {
     board: Board,
     player_turn: Player,
+    en_passant: Option<Position>,
 }
 
 impl Game {
@@ -15,6 +16,7 @@ impl Game {
         Game {
             board: Board::starting_position(),
             player_turn: Player::White,
+            en_passant: Option::None,
         }
     }
 
@@ -22,6 +24,7 @@ impl Game {
         Game {
             board: board,
             player_turn: player,
+            en_passant: Option::None,
         }
     }
 
@@ -34,10 +37,20 @@ impl Game {
     }
 
     fn apply_move(&self, from: &Position, to: Position) -> Result<Game, String> {
+        self.apply_move_with_en_passant(from, to, None)
+    }
+
+    fn apply_move_with_en_passant(&self, from: &Position, to: Position, en_passant: Option<Position>) -> Result<Game, String> {
         self.get_piece_at(from)
             .map_or_else(
                 || Err(format!("No piece at {}", from)),
-                |piece| self.apply_move_to_piece(from, to, piece)
+                |piece| self
+                    .apply_move_to_piece(from, to, piece)
+                    .map(|game|
+                        Game {
+                            en_passant: en_passant,
+                            .. game
+                    })
             )
     }
 
@@ -46,6 +59,7 @@ impl Game {
             Ok(Game {
                 board: self.board.put(to, *piece).remove(from),
                 player_turn: self.turn().opponent(),
+                en_passant: Option::None,
             })
         } else {
             Err(String::from("Can’t move pieces from the other player"))
@@ -66,7 +80,11 @@ impl Game {
     }
 
     fn create_move(&self, from: Position, to: Position) -> Move {
-        Move{from: from, to: to}
+        self.create_move_en_passant(from, to, None)
+    }
+
+    fn create_move_en_passant(&self, from: Position, to: Position, en_passant: Option<Position>) -> Move {
+        Move{from: from, to: to, en_passant: en_passant, game: self}
     }
 
     fn list_pawn_moves(&self, key: &Position, value: &Piece) -> Vector<Move> {
@@ -74,21 +92,51 @@ impl Game {
             Player::White => i+1,
             Player::Black => i-1,
         };
-        if (self.turn() == Player::White && key.row() == '2') || (self.turn() == Player::Black && key.row() == '7') {
-            vector![
-                self.create_move(*key, Position::new(key.column(), incr(key.row() as u8) as char).unwrap()),
-                self.create_move(*key, Position::new(key.column(), incr(incr(key.row() as u8)) as char).unwrap()),
-            ]
-        } else {
-            vector![self.create_move(*key, Position::new(key.column(), incr(key.row() as u8) as char).unwrap())]
+        let simple_move = Position::from_u8(key.column(), incr(key.row())).unwrap();
+        let mut positions = vector![simple_move];
+        let mut jump_position = None;
+        if (self.turn() == Player::White && key.row() == '2' as u8) || (self.turn() == Player::Black && key.row() == '7' as u8) {
+            jump_position = Some(Position::from_u8(key.column(), incr(incr(key.row()))).unwrap());
+            positions.push_back(jump_position.unwrap());
         }
+        let captures = vector![
+            Position::from_u8(key.column() - 1, incr(key.row())),
+            Position::from_u8(key.column() + 1, incr(key.row())),]
+            .into_iter()
+            .flatten()
+            .filter(|pos| self
+                .board()
+                .get(pos)
+                .map_or(false, |piece| piece.player() == value.player().opponent()))
+            .collect();
+        positions.append(captures);
+
+        positions
+            .into_iter()
+            .map(|position| {
+                let en_passant = if Some(position) == jump_position {
+                    Some(simple_move)
+                } else {
+                    None
+                };
+                self.create_move_en_passant(*key, position, en_passant)
+            })
+            .collect()
     }
 }
 
 #[derive(Copy, Clone, PartialEq, Debug)]
-struct Move {
+struct Move<'a> {
     from: Position,
     to: Position,
+    en_passant: Option<Position>,
+    game: &'a Game,
+}
+
+impl<'a> Move<'a> {
+    fn execute(&self) -> Game {
+        self.game.apply_move_with_en_passant(&self.from, self.to, self.en_passant).expect(&format!("Invalid move {:?}", self))
+    }
 }
 
 #[cfg(test)]
@@ -242,7 +290,7 @@ mod tests {
         assert_eq!(result.len(), 2);
         assert_that!(result).contains_all_of(&&[
             game.create_move(Position::from("e2").unwrap(), Position::from("e3").unwrap()),
-            game.create_move(Position::from("e2").unwrap(), Position::from("e4").unwrap()),
+            game.create_move_en_passant(Position::from("e2").unwrap(), Position::from("e4").unwrap(), Some(Position::from("e3").unwrap())),
         ]);
     }
 
@@ -275,7 +323,44 @@ mod tests {
         assert_eq!(result.len(), 2);
         assert_that!(result).contains_all_of(&&[
             game.create_move(Position::from("e7").unwrap(), Position::from("e6").unwrap()),
-            game.create_move(Position::from("e7").unwrap(), Position::from("e5").unwrap()),
+            game.create_move_en_passant(Position::from("e7").unwrap(), Position::from("e5").unwrap(), Some(Position::from("e6").unwrap())),
+        ]);
+    }
+
+    #[test]
+    fn list_move_pawn_capture_white() {
+        // Given
+        let board = Board::empty()
+            .put(Position::from("e3").unwrap(), Piece::new(PieceType::Pawn, Player::White))
+            .put(Position::from("d4").unwrap(), Piece::new(PieceType::Pawn, Player::Black));
+        let game = Game::from_board(board, Player::White);
+
+        // When
+        let result = game.list_moves();
+
+        // Then
+        assert_eq!(result.len(), 2);
+        assert_that!(result).contains_all_of(&&[
+            game.create_move(Position::from("e3").unwrap(), Position::from("e4").unwrap()),
+            game.create_move(Position::from("e3").unwrap(), Position::from("d4").unwrap()),
+        ]);
+    }
+
+    #[test]
+    fn list_move_pawn_generate_en_passant() {
+        // Given
+        let board = Board::empty()
+            .put(Position::from("e2").unwrap(), Piece::new(PieceType::Pawn, Player::White));
+        let game = Game::from_board(board, Player::White);
+
+        // When
+        let result = game.list_moves();
+
+        // Then
+        assert_eq!(result.len(), 2);
+        assert_that!(result).contains_all_of(&&[
+            Move {from: Position::from("e2").unwrap(), to: Position::from("e3").unwrap(), en_passant: None, game: &game},
+            Move {from: Position::from("e2").unwrap(), to: Position::from("e4").unwrap(), en_passant: Some(Position::from("e3").unwrap()), game: &game},
         ]);
     }
 }

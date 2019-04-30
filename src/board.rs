@@ -51,8 +51,8 @@ impl Player {
 
 #[derive(PartialEq, Eq, Hash, Debug, Copy, Clone)]
 pub struct Position {
-    column: char,
-    row: char,
+    column: u8,
+    row: u8,
 }
 
 
@@ -63,32 +63,40 @@ impl Position {
         }
         if POS_REGEX.is_match(pos) {
             let bytes = pos.as_bytes();
-            Some(Position {column: bytes[0] as char, row: bytes[1] as char})
+            Some(Position {column: bytes[0], row: bytes[1]})
         } else {
             None
         }
     }
 
-    pub fn new(column: char, row: char) -> Option<Position> {
+    pub fn from_chars(column: char, row: char) -> Option<Position> {
         if column >= 'a' && column <= 'h' && row >= '1' && row <= '8' {
+            Some(Position{row: row as u8, column: column as u8})
+        } else {
+            None
+        }
+    }
+
+    pub fn from_u8(column: u8, row: u8) -> Option<Position> {
+        if column >= 'a' as u8 && column <= 'h' as u8 && row >= '1' as u8 && row <= '8' as u8 {
             Some(Position{row: row, column: column})
         } else {
             None
         }
     }
 
-    pub fn column(&self) -> char {
+    pub fn column(&self) -> u8 {
         self.column
     }
 
-    pub fn row(&self) -> char {
+    pub fn row(&self) -> u8 {
         self.row
     }
 }
 
 impl Display for Position {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}{}", self.column, self.row)
+        write!(f, "{}{}", self.column as char, self.row as char)
     }
 }
 
