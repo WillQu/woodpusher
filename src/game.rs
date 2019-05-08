@@ -4,8 +4,10 @@ use board::Player;
 use board::Piece;
 use im::Vector;
 
+mod pawn;
+
 #[derive(Clone, Debug, PartialEq)]
-struct Game {
+pub struct Game {
     board: Board,
     player_turn: Player,
     en_passant: Option<Position>,
@@ -75,7 +77,7 @@ impl Game {
             .board
             .iter()
             .filter(|(_, value)| value.player() == self.turn())
-            .flat_map(|(key, value)| self.list_pawn_moves(key, value))
+            .flat_map(|(key, value)| pawn::list_pawn_moves(self, key, value))
             .collect()
     }
 
@@ -86,47 +88,10 @@ impl Game {
     fn create_move_en_passant(&self, from: Position, to: Position, en_passant: Option<Position>) -> Move {
         Move{from: from, to: to, en_passant: en_passant, game: self}
     }
-
-    fn list_pawn_moves(&self, key: &Position, value: &Piece) -> Vector<Move> {
-        let incr = |i| match value.player() {
-            Player::White => i+1,
-            Player::Black => i-1,
-        };
-        let simple_move = Position::from_u8(key.column(), incr(key.row())).unwrap();
-        let mut positions = vector![simple_move];
-        let mut jump_position = None;
-        if (self.turn() == Player::White && key.row() == '2' as u8) || (self.turn() == Player::Black && key.row() == '7' as u8) {
-            jump_position = Some(Position::from_u8(key.column(), incr(incr(key.row()))).unwrap());
-            positions.push_back(jump_position.unwrap());
-        }
-        let captures = vector![
-            Position::from_u8(key.column() - 1, incr(key.row())),
-            Position::from_u8(key.column() + 1, incr(key.row())),]
-            .into_iter()
-            .flatten()
-            .filter(|pos| self
-                .board()
-                .get(pos)
-                .map_or(false, |piece| piece.player() == value.player().opponent()) || self.en_passant == Some(*pos))
-            .collect();
-        positions.append(captures);
-
-        positions
-            .into_iter()
-            .map(|position| {
-                let en_passant = if Some(position) == jump_position {
-                    Some(simple_move)
-                } else {
-                    None
-                };
-                self.create_move_en_passant(*key, position, en_passant)
-            })
-            .collect()
-    }
 }
 
 #[derive(Copy, Clone, PartialEq, Debug)]
-struct Move<'a> {
+pub struct Move<'a> {
     from: Position,
     to: Position,
     en_passant: Option<Position>,
@@ -134,8 +99,13 @@ struct Move<'a> {
 }
 
 impl<'a> Move<'a> {
-    fn execute(&self) -> Game {
-        self.game.apply_move_with_en_passant(&self.from, self.to, self.en_passant).expect(&format!("Invalid move {:?}", self))
+    fn new_game(&self) -> Game {
+        let mut result = self.game.apply_move_with_en_passant(&self.from, self.to, self.en_passant).expect(&format!("Invalid move {:?}", self));
+        if Some(self.to) == self.game.en_passant {
+            let position_to_remove = Position::from_chars(self.to.column() as char, self.from.row() as char).unwrap();
+            result = Game {board: result.board.remove(&position_to_remove), ..result};
+        }
+        result
     }
 }
 
@@ -381,5 +351,26 @@ mod tests {
             Move {from: Position::from("e4").unwrap(), to: Position::from("e5").unwrap(), en_passant: None, game: &game},
             Move {from: Position::from("e4").unwrap(), to: Position::from("d5").unwrap(), en_passant: None, game: &game},
         ]);
+    }
+
+    #[test]
+    fn execute_move_pawn_en_passant() {
+        // Given
+        let board = Board::empty()
+            .put(Position::from("e4").unwrap(), Piece::new(PieceType::Pawn, Player::White))
+            .put(Position::from("d4").unwrap(), Piece::new(PieceType::Pawn, Player::Black));
+        let game = Game {board: board, player_turn: Player::White, en_passant: Some(Position::from("d5").unwrap())};
+
+        // When
+        let move_list = game.list_moves();
+        let result = move_list
+            .iter()
+            .filter(|mv| mv.from == Position::from("e4").unwrap() && mv.to == Position::from("d5").unwrap())
+            .next();
+
+        // Then
+        let new_board = Board::empty().put(Position::from("d5").unwrap(), Piece::new(PieceType::Pawn, Player::White));
+        let expected_new_game = Game {board: new_board, player_turn: Player::Black, en_passant: None};
+        assert_eq!(result.unwrap().new_game(), expected_new_game);
     }
 }
