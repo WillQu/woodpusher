@@ -107,7 +107,7 @@ impl Game {
             .filter(|pos| self
                 .board()
                 .get(pos)
-                .map_or(false, |piece| piece.player() == value.player().opponent()))
+                .map_or(false, |piece| piece.player() == value.player().opponent()) || self.en_passant == Some(*pos))
             .collect();
         positions.append(captures);
 
@@ -361,6 +361,25 @@ mod tests {
         assert_that!(result).contains_all_of(&&[
             Move {from: Position::from("e2").unwrap(), to: Position::from("e3").unwrap(), en_passant: None, game: &game},
             Move {from: Position::from("e2").unwrap(), to: Position::from("e4").unwrap(), en_passant: Some(Position::from("e3").unwrap()), game: &game},
+        ]);
+    }
+
+    #[test]
+    fn list_move_pawn_en_passant() {
+        // Given
+        let board = Board::empty()
+            .put(Position::from("e4").unwrap(), Piece::new(PieceType::Pawn, Player::White))
+            .put(Position::from("d4").unwrap(), Piece::new(PieceType::Pawn, Player::Black));
+        let game = Game {board: board, player_turn: Player::White, en_passant: Some(Position::from("d5").unwrap())};
+
+        // When
+        let result = game.list_moves();
+
+        // Then
+        assert_eq!(result.len(), 2);
+        assert_that!(result).contains_all_of(&&[
+            Move {from: Position::from("e4").unwrap(), to: Position::from("e5").unwrap(), en_passant: None, game: &game},
+            Move {from: Position::from("e4").unwrap(), to: Position::from("d5").unwrap(), en_passant: None, game: &game},
         ]);
     }
 }
