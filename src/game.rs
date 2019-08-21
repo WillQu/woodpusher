@@ -14,7 +14,7 @@ pub struct Game {
 }
 
 impl Game {
-    fn new() -> Game {
+    pub fn new() -> Game {
         Game {
             board: Board::starting_position(),
             player_turn: Player::White,
@@ -30,7 +30,7 @@ impl Game {
         }
     }
 
-    fn board(&self) -> &Board {
+    pub fn board(&self) -> &Board {
         &self.board
     }
 
@@ -38,11 +38,11 @@ impl Game {
         self.player_turn
     }
 
-    fn apply_move(&self, from: &Position, to: Position) -> Result<Game, String> {
+    pub fn apply_move(&self, from: Position, to: Position) -> Result<Game, String> {
         self.apply_move_with_en_passant(from, to, None)
     }
 
-    fn apply_move_with_en_passant(&self, from: &Position, to: Position, en_passant: Option<Position>) -> Result<Game, String> {
+    fn apply_move_with_en_passant(&self, from: Position, to: Position, en_passant: Option<Position>) -> Result<Game, String> {
         self.get_piece_at(from)
             .map_or_else(
                 || Err(format!("No piece at {}", from)),
@@ -56,7 +56,7 @@ impl Game {
             )
     }
 
-    fn apply_move_to_piece(&self, from: &Position, to: Position, piece: &Piece) -> Result<Game, String> {
+    fn apply_move_to_piece(&self, from: Position, to: Position, piece: &Piece) -> Result<Game, String> {
         if piece.player() == self.turn() {
             Ok(Game {
                 board: self.board.put(to, *piece).remove(from),
@@ -68,11 +68,11 @@ impl Game {
         }
     }
 
-    fn get_piece_at(&self, position: &Position) -> Option<&Piece> {
+    fn get_piece_at(&self, position: Position) -> Option<&Piece> {
         self.board.get(position)
     }
 
-    fn list_moves(&self) -> Vector<Move> {
+    pub fn list_moves(&self) -> Vector<Move> {
         self
             .board
             .iter()
@@ -100,10 +100,10 @@ pub struct Move<'a> {
 
 impl<'a> Move<'a> {
     fn new_game(&self) -> Game {
-        let mut result = self.game.apply_move_with_en_passant(&self.from, self.to, self.en_passant).expect(&format!("Invalid move {:?}", self));
+        let mut result = self.game.apply_move_with_en_passant(self.from, self.to, self.en_passant).expect(&format!("Invalid move {:?}", self));
         if Some(self.to) == self.game.en_passant {
             let position_to_remove = Position::from_chars(self.to.column() as char, self.from.row() as char).unwrap();
-            result = Game {board: result.board.remove(&position_to_remove), ..result};
+            result = Game {board: result.board.remove(position_to_remove), ..result};
         }
         result
     }
@@ -136,11 +136,11 @@ mod tests {
         let game = Game::new();
 
         // When
-        let game_after_move = game.apply_move(&Position::from("e2").unwrap(), Position::from("e4").unwrap()).unwrap();
+        let game_after_move = game.apply_move(Position::from("e2").unwrap(), Position::from("e4").unwrap()).unwrap();
 
         // Then
-        assert_eq!(game_after_move.get_piece_at(&Position::from("e4").unwrap()), Some(&Piece::new(PieceType::Pawn, Player::White)));
-        assert_eq!(game_after_move.get_piece_at(&Position::from("e2").unwrap()), None);
+        assert_eq!(game_after_move.get_piece_at(Position::from("e4").unwrap()), Some(&Piece::new(PieceType::Pawn, Player::White)));
+        assert_eq!(game_after_move.get_piece_at(Position::from("e2").unwrap()), None);
         assert_eq!(game_after_move.turn(), Player::Black);
     }
 
@@ -150,10 +150,10 @@ mod tests {
         let game = Game::new();
 
         // When
-        let game_after_move = game.apply_move(&Position::from("d2").unwrap(), Position::from("d4").unwrap()).unwrap();
+        let game_after_move = game.apply_move(Position::from("d2").unwrap(), Position::from("d4").unwrap()).unwrap();
 
         // Then
-        assert_eq!(game_after_move.get_piece_at(&Position::from("d4").unwrap()), Some(&Piece::new(PieceType::Pawn, Player::White)));
+        assert_eq!(game_after_move.get_piece_at(Position::from("d4").unwrap()), Some(&Piece::new(PieceType::Pawn, Player::White)));
     }
 
     #[test]
@@ -162,10 +162,10 @@ mod tests {
         let game = Game::new();
 
         // When
-        let game_after_move = game.apply_move(&Position::from("g1").unwrap(), Position::from("f3").unwrap()).unwrap();
+        let game_after_move = game.apply_move(Position::from("g1").unwrap(), Position::from("f3").unwrap()).unwrap();
 
         // Then
-        assert_eq!(game_after_move.get_piece_at(&Position::from("f3").unwrap()), Some(&Piece::new(PieceType::Knight, Player::White)));
+        assert_eq!(game_after_move.get_piece_at(Position::from("f3").unwrap()), Some(&Piece::new(PieceType::Knight, Player::White)));
     }
 
     #[test]
@@ -175,8 +175,8 @@ mod tests {
 
         // When
         let game_after_move = game
-            .apply_move(&Position::from("e2").unwrap(), Position::from("e4").unwrap())
-            .and_then(|game| game.apply_move(&Position::from("e7").unwrap(), Position::from("e5").unwrap()));
+            .apply_move(Position::from("e2").unwrap(), Position::from("e4").unwrap())
+            .and_then(|game| game.apply_move(Position::from("e7").unwrap(), Position::from("e5").unwrap()));
 
         // Then
         assert_eq!(game_after_move.map(|game| game.turn()), Ok(Player::White));
@@ -189,7 +189,7 @@ mod tests {
 
         // When
         let game_after_move = game
-            .apply_move(&Position::from("e7").unwrap(), Position::from("e5").unwrap());
+            .apply_move(Position::from("e7").unwrap(), Position::from("e5").unwrap());
 
         // Then
         assert!(game_after_move.is_err());

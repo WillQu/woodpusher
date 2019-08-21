@@ -20,7 +20,7 @@ pub fn list_pawn_moves<'a>(game: &'a Game, key: &Position, value: &Piece) -> Vec
         .flatten()
         .filter(|pos| game
             .board()
-            .get(pos)
+            .get(*pos)
             .map_or(false, |piece| piece.player() == value.player().opponent()) || game.en_passant == Some(*pos))
         .collect();
     positions.append(captures);

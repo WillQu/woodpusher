@@ -199,15 +199,15 @@ impl Board {
         Board {squares: HashMap::new()}
     }
 
-    pub fn get(&self, position: &Position) -> Option<&Piece> {
-        self.squares.get(position)
+    pub fn get(&self, position: Position) -> Option<&Piece> {
+        self.squares.get(&position)
     }
 
     pub fn put(&self, position: Position, piece: Piece) -> Board {
         Board{squares: self.squares.update(position, piece)}
     }
 
-    pub fn remove(&self, position: &Position) -> Board {
+    pub fn remove(&self, position: Position) -> Board {
         Board {squares: self.squares.without(&position)}
     }
 
@@ -230,25 +230,25 @@ mod tests {
         let result = Board::starting_position();
 
         // Then
-        assert_eq!(result.get(&Position::from("e1").unwrap()), Some(& Piece { piece_type: King, player: White}));
-        assert_eq!(result.get(&Position::from("e8").unwrap()), Some(& Piece { piece_type: King, player: Black}));
-        assert_eq!(result.get(&Position::from("d1").unwrap()), Some(& Piece { piece_type: Queen, player: White}));
-        assert_eq!(result.get(&Position::from("d8").unwrap()), Some(& Piece { piece_type: Queen, player: Black}));
-        assert_eq!(result.get(&Position::from("c1").unwrap()), Some(& Piece { piece_type: Bishop, player: White}));
-        assert_eq!(result.get(&Position::from("c8").unwrap()), Some(& Piece { piece_type: Bishop, player: Black}));
-        assert_eq!(result.get(&Position::from("f1").unwrap()), Some(& Piece { piece_type: Bishop, player: White}));
-        assert_eq!(result.get(&Position::from("f8").unwrap()), Some(& Piece { piece_type: Bishop, player: Black}));
-        assert_eq!(result.get(&Position::from("b1").unwrap()), Some(& Piece { piece_type: Knight, player: White}));
-        assert_eq!(result.get(&Position::from("b8").unwrap()), Some(& Piece { piece_type: Knight, player: Black}));
-        assert_eq!(result.get(&Position::from("g1").unwrap()), Some(& Piece { piece_type: Knight, player: White}));
-        assert_eq!(result.get(&Position::from("g8").unwrap()), Some(& Piece { piece_type: Knight, player: Black}));
-        assert_eq!(result.get(&Position::from("a1").unwrap()), Some(& Piece { piece_type: Rook, player: White}));
-        assert_eq!(result.get(&Position::from("a8").unwrap()), Some(& Piece { piece_type: Rook, player: Black}));
-        assert_eq!(result.get(&Position::from("h1").unwrap()), Some(& Piece { piece_type: Rook, player: White}));
-        assert_eq!(result.get(&Position::from("h8").unwrap()), Some(& Piece { piece_type: Rook, player: Black}));
+        assert_eq!(result.get(Position::from("e1").unwrap()), Some(& Piece { piece_type: King, player: White}));
+        assert_eq!(result.get(Position::from("e8").unwrap()), Some(& Piece { piece_type: King, player: Black}));
+        assert_eq!(result.get(Position::from("d1").unwrap()), Some(& Piece { piece_type: Queen, player: White}));
+        assert_eq!(result.get(Position::from("d8").unwrap()), Some(& Piece { piece_type: Queen, player: Black}));
+        assert_eq!(result.get(Position::from("c1").unwrap()), Some(& Piece { piece_type: Bishop, player: White}));
+        assert_eq!(result.get(Position::from("c8").unwrap()), Some(& Piece { piece_type: Bishop, player: Black}));
+        assert_eq!(result.get(Position::from("f1").unwrap()), Some(& Piece { piece_type: Bishop, player: White}));
+        assert_eq!(result.get(Position::from("f8").unwrap()), Some(& Piece { piece_type: Bishop, player: Black}));
+        assert_eq!(result.get(Position::from("b1").unwrap()), Some(& Piece { piece_type: Knight, player: White}));
+        assert_eq!(result.get(Position::from("b8").unwrap()), Some(& Piece { piece_type: Knight, player: Black}));
+        assert_eq!(result.get(Position::from("g1").unwrap()), Some(& Piece { piece_type: Knight, player: White}));
+        assert_eq!(result.get(Position::from("g8").unwrap()), Some(& Piece { piece_type: Knight, player: Black}));
+        assert_eq!(result.get(Position::from("a1").unwrap()), Some(& Piece { piece_type: Rook, player: White}));
+        assert_eq!(result.get(Position::from("a8").unwrap()), Some(& Piece { piece_type: Rook, player: Black}));
+        assert_eq!(result.get(Position::from("h1").unwrap()), Some(& Piece { piece_type: Rook, player: White}));
+        assert_eq!(result.get(Position::from("h8").unwrap()), Some(& Piece { piece_type: Rook, player: Black}));
         for c in "abcdefgh".chars() {
-            assert_eq!(result.get(&Position::from(&format!("{}2", c)).unwrap()), Some(&Piece { piece_type: Pawn, player: White}));
-            assert_eq!(result.get(&Position::from(&format!("{}7", c)).unwrap()), Some(&Piece { piece_type: Pawn, player: Black}));
+            assert_eq!(result.get(Position::from(&format!("{}2", c)).unwrap()), Some(&Piece { piece_type: Pawn, player: White}));
+            assert_eq!(result.get(Position::from(&format!("{}7", c)).unwrap()), Some(&Piece { piece_type: Pawn, player: Black}));
         }
     }
 
