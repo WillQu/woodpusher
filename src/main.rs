@@ -15,7 +15,7 @@ fn main() -> io::Result<()> {
 	while(!game.list_moves().is_empty()) {
 		println!("{}", game_cli::show_board(game.board()));
 		let (from, to) = ask_position()?;
-		let game_result = game.apply_move(from, to);
+		let game_result = game.execute_move(from, to);
 		game = match game_result {
 			Ok(g) => g,
 			Err(_) => game,

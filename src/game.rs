@@ -37,8 +37,17 @@ impl Game {
     fn turn(&self) -> Player {
         self.player_turn
     }
+	
+    pub fn execute_move(&self, from: Position, to: Position) -> Result<Game, String> {
+        self
+		.list_moves()
+		.iter()
+		.find(|mv| mv.from == from && mv.to == to)
+		.map(|mv| mv.new_game())
+		.ok_or("Illegal move".to_string())
+	}
 
-    pub fn apply_move(&self, from: Position, to: Position) -> Result<Game, String> {
+    fn apply_move(&self, from: Position, to: Position) -> Result<Game, String> {
         self.apply_move_with_en_passant(from, to, None)
     }
 
@@ -372,5 +381,31 @@ mod tests {
         let new_board = Board::empty().put(Position::from("d5").unwrap(), Piece::new(PieceType::Pawn, Player::White));
         let expected_new_game = Game {board: new_board, player_turn: Player::Black, en_passant: None};
         assert_eq!(result.unwrap().new_game(), expected_new_game);
+    }
+
+    #[test]
+    fn execute_legal_move() {
+        // Given
+        let game = Game::new();
+
+        // When
+        let game_after_move = game.execute_move(Position::from("e2").unwrap(), Position::from("e4").unwrap()).unwrap();
+
+        // Then
+        assert_eq!(game_after_move.get_piece_at(Position::from("e4").unwrap()), Some(&Piece::new(PieceType::Pawn, Player::White)));
+        assert_eq!(game_after_move.get_piece_at(Position::from("e2").unwrap()), None);
+        assert_eq!(game_after_move.turn(), Player::Black);
+    }
+
+    #[test]
+    fn execute_illegal_move() {
+        // Given
+        let game = Game::new();
+
+        // When
+        let result = game.execute_move(Position::from("e2").unwrap(), Position::from("d3").unwrap());
+
+        // Then
+        assert_eq!(result, Err("Illegal move".to_string()));
     }
 }
