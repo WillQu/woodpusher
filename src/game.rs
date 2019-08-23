@@ -1,10 +1,13 @@
+use im::Vector;
+
 use board::Board;
 use board::Position;
 use board::Player;
 use board::Piece;
-use im::Vector;
+use board::PieceType::Pawn;
 
 mod pawn;
+mod rook;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Game {
@@ -22,7 +25,7 @@ impl Game {
         }
     }
 
-    fn from_board(board: Board, player: Player) -> Game {
+    pub fn from_board(board: Board, player: Player) -> Game {
         Game {
             board: board,
             player_turn: player,
@@ -85,8 +88,8 @@ impl Game {
         self
             .board
             .iter()
-            .filter(|(_, value)| value.player() == self.turn())
-            .flat_map(|(key, value)| pawn::list_pawn_moves(self, key, value))
+            .filter(|(_, value)| value.player() == self.turn() && value.piece_type() == Pawn)
+            .flat_map(|(key, value)| pawn::list_pawn_moves(self, key, value.player()))
             .collect()
     }
 
@@ -404,6 +407,20 @@ mod tests {
 
         // When
         let result = game.execute_move(Position::from("e2").unwrap(), Position::from("d3").unwrap());
+
+        // Then
+        assert_eq!(result, Err("Illegal move".to_string()));
+    }
+
+    #[test]
+    fn execute_illegal_move2() {
+        // Given
+        let game = Game::new()
+			.execute_move(Position::from("b2").unwrap(), Position::from("b3").unwrap()).unwrap()
+			.execute_move(Position::from("b7").unwrap(), Position::from("b6").unwrap()).unwrap();
+
+        // When
+        let result = game.execute_move(Position::from("b1").unwrap(), Position::from("b2").unwrap());
 
         // Then
         assert_eq!(result, Err("Illegal move".to_string()));

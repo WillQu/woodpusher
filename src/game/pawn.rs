@@ -1,8 +1,8 @@
 use board::*;
 use game::*;
 
-pub fn list_pawn_moves<'a>(game: &'a Game, key: &Position, value: &Piece) -> Vector<Move<'a>> {
-    let incr = |i| match value.player() {
+pub fn list_pawn_moves<'a>(game: &'a Game, key: &Position, player: Player) -> Vector<Move<'a>> {
+    let incr = |i| match player {
         Player::White => i+1,
         Player::Black => i-1,
     };
@@ -21,7 +21,7 @@ pub fn list_pawn_moves<'a>(game: &'a Game, key: &Position, value: &Piece) -> Vec
         .filter(|pos| game
             .board()
             .get(*pos)
-            .map_or(false, |piece| piece.player() == value.player().opponent()) || game.en_passant == Some(*pos))
+            .map_or(false, |piece| piece.player() == player.opponent()) || game.en_passant == Some(*pos))
         .collect();
     positions.append(captures);
 
