@@ -50,10 +50,6 @@ impl Game {
 		.ok_or("Illegal move".to_string())
 	}
 
-    fn apply_move(&self, from: Position, to: Position) -> Result<Game, String> {
-        self.apply_move_with_en_passant(from, to, None)
-    }
-
     fn apply_move_with_en_passant(&self, from: Position, to: Position, en_passant: Option<Position>) -> Result<Game, String> {
         self.get_piece_at(from)
             .map_or_else(
@@ -156,7 +152,7 @@ mod tests {
         let game = Game::new();
 
         // When
-        let game_after_move = game.apply_move(Position::from("e2").unwrap(), Position::from("e4").unwrap()).unwrap();
+        let game_after_move = game.execute_move(Position::from("e2").unwrap(), Position::from("e4").unwrap()).unwrap();
 
         // Then
         assert_eq!(game_after_move.get_piece_at(Position::from("e4").unwrap()), Some(&Piece::new(PieceType::Pawn, Player::White)));
@@ -170,22 +166,10 @@ mod tests {
         let game = Game::new();
 
         // When
-        let game_after_move = game.apply_move(Position::from("d2").unwrap(), Position::from("d4").unwrap()).unwrap();
+        let game_after_move = game.execute_move(Position::from("d2").unwrap(), Position::from("d4").unwrap()).unwrap();
 
         // Then
         assert_eq!(game_after_move.get_piece_at(Position::from("d4").unwrap()), Some(&Piece::new(PieceType::Pawn, Player::White)));
-    }
-
-    #[test]
-    fn first_move_3() {
-        // Given
-        let game = Game::new();
-
-        // When
-        let game_after_move = game.apply_move(Position::from("g1").unwrap(), Position::from("f3").unwrap()).unwrap();
-
-        // Then
-        assert_eq!(game_after_move.get_piece_at(Position::from("f3").unwrap()), Some(&Piece::new(PieceType::Knight, Player::White)));
     }
 
     #[test]
@@ -195,8 +179,8 @@ mod tests {
 
         // When
         let game_after_move = game
-            .apply_move(Position::from("e2").unwrap(), Position::from("e4").unwrap())
-            .and_then(|game| game.apply_move(Position::from("e7").unwrap(), Position::from("e5").unwrap()));
+            .execute_move(Position::from("e2").unwrap(), Position::from("e4").unwrap())
+            .and_then(|game| game.execute_move(Position::from("e7").unwrap(), Position::from("e5").unwrap()));
 
         // Then
         assert_eq!(game_after_move.map(|game| game.turn()), Ok(Player::White));
@@ -209,7 +193,7 @@ mod tests {
 
         // When
         let game_after_move = game
-            .apply_move(Position::from("e7").unwrap(), Position::from("e5").unwrap());
+            .execute_move(Position::from("e7").unwrap(), Position::from("e5").unwrap());
 
         // Then
         assert!(game_after_move.is_err());

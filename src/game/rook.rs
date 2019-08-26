@@ -40,7 +40,6 @@ mod tests {
 	use self::rook::*;
 	
 	use spectral::*;
-	use spectral::prelude::ContainingIntoIterAssertions;
 	use im::HashSet;
 	
 	use board::*;
