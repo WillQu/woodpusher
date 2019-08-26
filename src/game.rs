@@ -4,7 +4,7 @@ use board::Board;
 use board::Position;
 use board::Player;
 use board::Piece;
-use board::PieceType::Pawn;
+use board::PieceType;
 
 mod pawn;
 mod rook;
@@ -88,8 +88,14 @@ impl Game {
         self
             .board
             .iter()
-            .filter(|(_, value)| value.player() == self.turn() && value.piece_type() == Pawn)
-            .flat_map(|(key, value)| pawn::list_pawn_moves(self, key, value.player()))
+            .filter(|(_, value)| value.player() == self.turn())
+            .flat_map(|(key, value)| 
+				match value.piece_type() {
+					PieceType::Pawn => pawn::list_pawn_moves(self, key, value.player()),
+					PieceType::Rook => rook::list_rook_moves(self, *key, value.player()),
+					_ => vector![],
+				}
+			)
             .collect()
     }
 
@@ -123,11 +129,13 @@ impl<'a> Move<'a> {
 
 #[cfg(test)]
 mod tests {
+	use im::HashSet;
+	
     use spectral::prelude::*;
 
     use game::*;
     use board::PieceType;
-    use board::Player;
+    use board::Player::*;
     use board::Position;
     use board::Board;
     use board::Piece;
@@ -425,4 +433,22 @@ mod tests {
         // Then
         assert_eq!(result, Err("Illegal move".to_string()));
     }
+
+	#[test]
+	fn rook() {
+		// Given
+		let board = Board::empty().put(Position::from("a1").unwrap(), Piece::new(PieceType::Rook, Player::White));
+		let game = Game::from_board(board, White);
+		
+		// When
+		let result = game.list_moves();
+		
+		//Then
+		let expected:HashSet<Position> = vector!["a2", "a3", "a4", "a5", "a6", "a7", "a8", "b1", "c1", "d1", "e1", "f1", "g1", "h1"]
+			.iter()
+			.map(|pos| Position::from(pos).unwrap())
+			.collect();
+		let result_positions: HashSet<Position> = result.iter().map(|mv| mv.to).collect();
+		assert_that!(result_positions).is_equal_to(expected);
+	}
 }

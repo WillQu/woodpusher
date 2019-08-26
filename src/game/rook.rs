@@ -14,8 +14,8 @@ pub fn list_rook_moves<'a>(game: &'a Game, position: Position, player: Player) -
 
 fn generate_line(game: &Game, player: Player, index: u8, position_gen: impl Fn(u8) -> Option<Position>) -> Vector<Position> {
 	let mut results = Vector::new();
-	let mut index = index;
 	for increment in &[-1, 1] {
+		let mut index = index;
 		loop {
 			index = (index as i8 + increment) as u8;
 			let new_position = position_gen(index);
@@ -50,7 +50,7 @@ mod tests {
 	#[test]
 	fn from_a1() {
 		// Given
-		let game = Game::from_board(Board::empty(), White);
+		let game = Game::from_board(Board::empty().put(Position::from("a1").unwrap(), Piece::new(PieceType::Rook, Player::White)), White);
 		
 		// When
 		let result = list_rook_moves(&game, Position::from("a1").unwrap(), White);
@@ -67,7 +67,7 @@ mod tests {
 	#[test]
 	fn from_h8() {
 		// Given
-		let game = Game::from_board(Board::empty(), White);
+		let game = Game::from_board(Board::empty().put(Position::from("h8").unwrap(), Piece::new(PieceType::Rook, Player::White)), White);
 		
 		// When
 		let result = list_rook_moves(&game, Position::from("h8").unwrap(), White);
@@ -84,7 +84,9 @@ mod tests {
 	#[test]
 	fn friend_in_the_way() {
 		// Given
-		let board = Board::empty().put(Position::from("a2").unwrap(), Piece::new(Pawn, White));
+		let board = Board::empty()
+			.put(Position::from("a1").unwrap(), Piece::new(PieceType::Rook, Player::White))
+			.put(Position::from("a2").unwrap(), Piece::new(PieceType::Pawn, White));
 		let game = Game::from_board(board, White);
 		
 		// When
@@ -102,7 +104,9 @@ mod tests {
 	#[test]
 	fn friend_in_the_way2() {
 		// Given
-		let board = Board::empty().put(Position::from("b1").unwrap(), Piece::new(Pawn, White));
+		let board = Board::empty()
+			.put(Position::from("a1").unwrap(), Piece::new(PieceType::Rook, Player::White))
+			.put(Position::from("b1").unwrap(), Piece::new(PieceType::Pawn, White));
 		let game = Game::from_board(board, White);
 		
 		// When
@@ -120,7 +124,9 @@ mod tests {
 	#[test]
 	fn enemy_in_the_way() {
 		// Given
-		let board = Board::empty().put(Position::from("a2").unwrap(), Piece::new(Pawn, Black));
+		let board = Board::empty()
+			.put(Position::from("a1").unwrap(), Piece::new(PieceType::Rook, Player::White))
+			.put(Position::from("a2").unwrap(), Piece::new(PieceType::Pawn, Black));
 		let game = Game::from_board(board, White);
 		
 		// When
@@ -138,7 +144,9 @@ mod tests {
 	#[test]
 	fn enemy_in_the_way2() {
 		// Given
-		let board = Board::empty().put(Position::from("b1").unwrap(), Piece::new(Pawn, Black));
+		let board = Board::empty()
+			.put(Position::from("a1").unwrap(), Piece::new(PieceType::Rook, Player::White))
+			.put(Position::from("b1").unwrap(), Piece::new(PieceType::Pawn, Black));
 		let game = Game::from_board(board, White);
 		
 		// When
