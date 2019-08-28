@@ -2,37 +2,7 @@ use board::*;
 use game::*;
 
 pub fn list_rook_moves<'a>(game: &'a Game, position: Position, player: Player) -> Vector<Move<'a>> {
-	let columns = generate_line(game, player, position.row(), |x| Position::from_u8(position.column(), x));
-	let rows = generate_line(game, player, position.column(), |x| Position::from_u8(x, position.row()));
-	
-	(rows + columns)
-		.into_iter()
-		.filter(|p| *p != position)
-		.map(|pos| game.create_move(position, pos))
-		.collect()
-}
-
-fn generate_line(game: &Game, player: Player, index: u8, position_gen: impl Fn(u8) -> Option<Position>) -> Vector<Position> {
-	let mut results = Vector::new();
-	for increment in &[-1, 1] {
-		let mut index = index;
-		loop {
-			index = (index as i8 + increment) as u8;
-			let new_position = position_gen(index);
-			if new_position.is_none() {
-				break;
-			}
-			let piece = game.get_piece_at(new_position.unwrap());
-			if  piece.is_some() {
-				if piece.unwrap().player() == player.opponent() {
-					results.push_back(new_position.unwrap())
-				}
-				break;
-			}
-			results.push_back(new_position.unwrap());
-		}
-	}
-	results
+	move_list::generate_moves(game, player, position, &[(0, 1), (1, 0), (0, -1), (-1, 0)])
 }
 
 #[cfg(test)]
