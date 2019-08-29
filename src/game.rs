@@ -11,6 +11,7 @@ mod pawn;
 mod rook;
 mod bishop;
 mod queen;
+mod knight;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Game {
@@ -94,6 +95,7 @@ impl Game {
 					PieceType::Rook => rook::list_rook_moves(self, *key, value.player()),
 					PieceType::Bishop => bishop::list_bishop_moves(self, *key, value.player()),
 					PieceType::Queen => queen::list_queen_moves(self, *key, value.player()),
+					PieceType::Knight => knight::list_knight_moves(self, *key, value.player()),
 					_ => vector![],
 				}
 			)
@@ -468,6 +470,23 @@ mod tests {
 		
 		//Then
 		let expected: HashSet<Position> = ["a2", "a3", "a4", "a5", "a6", "a7", "a8", "b1", "c1", "d1", "e1", "f1", "g1", "h1", "b2", "c3", "d4", "e5", "f6", "g7", "h8"]
+			.iter()
+			.map(|pos| Position::from(pos).unwrap())
+			.collect();
+		let result_positions: HashSet<Position> = result.iter().map(|mv| mv.to).collect();
+		assert_that!(result_positions).is_equal_to(expected);
+	}
+
+	#[test]
+	fn knight() {
+		// Given
+		let game = Game::from_board(Board::empty().put(Position::from("a1").unwrap(), Piece::new(PieceType::Knight, Player::White)), White);
+		
+		// When
+		let result = game.list_moves();
+		
+		//Then
+		let expected: HashSet<Position> = ["b3", "c2"]
 			.iter()
 			.map(|pos| Position::from(pos).unwrap())
 			.collect();
