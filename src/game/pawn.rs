@@ -1,7 +1,7 @@
 use board::*;
 use game::*;
 
-pub fn list_pawn_moves<'a>(game: &'a Game, key: &Position, player: Player) -> Vector<Move<'a>> {
+pub fn list_pawn_moves(game: &Game, key: Position, player: Player) -> Vector<Move<'_>> {
     let incr = |i| match player {
         Player::White => i+1,
         Player::Black => i-1,
@@ -9,7 +9,7 @@ pub fn list_pawn_moves<'a>(game: &'a Game, key: &Position, player: Player) -> Ve
     let simple_move = Position::from_u8(key.column(), incr(key.row())).unwrap();
     let mut positions = vector![simple_move];
     let mut jump_position = None;
-    if (game.turn() == Player::White && key.row() == '2' as u8) || (game.turn() == Player::Black && key.row() == '7' as u8) {
+    if (game.turn() == Player::White && key.row() == b'2') || (game.turn() == Player::Black && key.row() == b'7') {
         jump_position = Some(Position::from_u8(key.column(), incr(incr(key.row()))).unwrap());
         positions.push_back(jump_position.unwrap());
     }
@@ -33,7 +33,7 @@ pub fn list_pawn_moves<'a>(game: &'a Game, key: &Position, player: Player) -> Ve
             } else {
                 None
             };
-            game.create_move_en_passant(*key, position, en_passant)
+            game.create_move_en_passant(key, position, en_passant)
         })
         .collect()
 }

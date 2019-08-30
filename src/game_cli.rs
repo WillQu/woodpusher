@@ -9,8 +9,8 @@ pub fn show_board(board: &Board) -> String {
     for line in "87654321".chars() {
         for row in "abcdefgh".chars() {
             result.push(board
-                .get(Position::from(&[row, line].into_iter().collect::<String>()).unwrap())
-                .map_or_else(|| '·', |piece| show_piece(piece))
+                .get(Position::from(&[row, line].iter().collect::<String>()).unwrap())
+                .map_or_else(|| '·', |piece| show_piece(*piece))
             );
             result.push(' ');
         }
@@ -20,7 +20,7 @@ pub fn show_board(board: &Board) -> String {
     result
 }
 
-fn show_piece(piece: &Piece) -> char {
+fn show_piece(piece: Piece) -> char {
     match (piece.piece_type(), piece.player()) {
         (Rook, Black) => '♜',
         (Knight, Black) => '♞',

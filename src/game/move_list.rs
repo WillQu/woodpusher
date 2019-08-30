@@ -2,7 +2,7 @@ use board::*;
 use game::*;
 
 pub fn generate_moves<'a>(game: &'a Game, player: Player, start_position: Position, directions: &[(i8, i8)]) -> Vector<Move<'a>> {
-	generate_moves_with_limit(game, player, start_position, directions, std::u8::MAX)
+	generate_moves_with_limit(game, player, start_position, directions, u8::max_value())
 }
 
 pub fn generate_moves_one_square<'a>(game: &'a Game, player: Player, start_position: Position, directions: &[(i8, i8)]) -> Vector<Move<'a>> {

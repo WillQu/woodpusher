@@ -22,17 +22,17 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn new() -> Game {
-        Game {
+    pub fn new() -> Self {
+        Self {
             board: Board::starting_position(),
             player_turn: Player::White,
             en_passant: Option::None,
         }
     }
 
-    pub fn from_board(board: Board, player: Player) -> Game {
-        Game {
-            board: board,
+    pub fn from_board(board: Board, player: Player) -> Self {
+        Self {
+            board,
             player_turn: player,
             en_passant: Option::None,
         }
@@ -46,33 +46,33 @@ impl Game {
         self.player_turn
     }
 	
-    pub fn execute_move(&self, from: Position, to: Position) -> Result<Game, String> {
+    pub fn execute_move(&self, from: Position, to: Position) -> Result<Self, String> {
         self
 		.list_moves()
 		.iter()
 		.find(|mv| mv.from == from && mv.to == to)
-		.map(|mv| mv.new_game())
-		.ok_or("Illegal move".to_string())
+		.map(Move::new_game)
+		.ok_or_else(|| "Illegal move".to_string())
 	}
 
-    fn apply_move_with_en_passant(&self, from: Position, to: Position, en_passant: Option<Position>) -> Result<Game, String> {
+    fn apply_move_with_en_passant(&self, from: Position, to: Position, en_passant: Option<Position>) -> Result<Self, String> {
         self.get_piece_at(from)
             .map_or_else(
                 || Err(format!("No piece at {}", from)),
                 |piece| self
-                    .apply_move_to_piece(from, to, piece)
+                    .apply_move_to_piece(from, to, *piece)
                     .map(|game|
-                        Game {
-                            en_passant: en_passant,
+                        Self {
+                            en_passant,
                             .. game
                     })
             )
     }
 
-    fn apply_move_to_piece(&self, from: Position, to: Position, piece: &Piece) -> Result<Game, String> {
+    fn apply_move_to_piece(&self, from: Position, to: Position, piece: Piece) -> Result<Self, String> {
         if piece.player() == self.turn() {
-            Ok(Game {
-                board: self.board.put(to, *piece).remove(from),
+            Ok(Self {
+                board: self.board.put(to, piece).remove(from),
                 player_turn: self.turn().opponent(),
                 en_passant: Option::None,
             })
@@ -92,7 +92,7 @@ impl Game {
             .filter(|(_, value)| value.player() == self.turn())
             .flat_map(|(key, value)| 
 				match value.piece_type() {
-					PieceType::Pawn => pawn::list_pawn_moves(self, key, value.player()),
+					PieceType::Pawn => pawn::list_pawn_moves(self, *key, value.player()),
 					PieceType::Rook => rook::list_rook_moves(self, *key, value.player()),
 					PieceType::Bishop => bishop::list_bishop_moves(self, *key, value.player()),
 					PieceType::Queen => queen::list_queen_moves(self, *key, value.player()),
@@ -108,8 +108,14 @@ impl Game {
     }
 
     fn create_move_en_passant(&self, from: Position, to: Position, en_passant: Option<Position>) -> Move {
-        Move{from: from, to: to, en_passant: en_passant, game: self}
+        Move{from, to, en_passant, game: self}
     }
+}
+
+impl Default for Game {
+	fn default() -> Self {
+		Self::new()
+	}
 }
 
 #[derive(Copy, Clone, PartialEq, Debug)]
@@ -122,7 +128,7 @@ pub struct Move<'a> {
 
 impl<'a> Move<'a> {
     fn new_game(&self) -> Game {
-        let mut result = self.game.apply_move_with_en_passant(self.from, self.to, self.en_passant).expect(&format!("Invalid move {:?}", self));
+        let mut result = self.game.apply_move_with_en_passant(self.from, self.to, self.en_passant).unwrap_or_else(|_| panic!("Invalid move {:?}", self));
         if Some(self.to) == self.game.en_passant {
             let position_to_remove = Position::from_chars(self.to.column() as char, self.from.row() as char).unwrap();
             result = Game {board: result.board.remove(position_to_remove), ..result};
@@ -352,7 +358,7 @@ mod tests {
         let board = Board::empty()
             .put(Position::from("e4").unwrap(), Piece::new(PieceType::Pawn, Player::White))
             .put(Position::from("d4").unwrap(), Piece::new(PieceType::Pawn, Player::Black));
-        let game = Game {board: board, player_turn: Player::White, en_passant: Some(Position::from("d5").unwrap())};
+        let game = Game {board, player_turn: Player::White, en_passant: Some(Position::from("d5").unwrap())};
 
         // When
         let result = game.list_moves();
@@ -371,7 +377,7 @@ mod tests {
         let board = Board::empty()
             .put(Position::from("e4").unwrap(), Piece::new(PieceType::Pawn, Player::White))
             .put(Position::from("d4").unwrap(), Piece::new(PieceType::Pawn, Player::Black));
-        let game = Game {board: board, player_turn: Player::White, en_passant: Some(Position::from("d5").unwrap())};
+        let game = Game {board, player_turn: Player::White, en_passant: Some(Position::from("d5").unwrap())};
 
         // When
         let move_list = game.list_moves();

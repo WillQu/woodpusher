@@ -1,7 +1,7 @@
 use board::*;
 use game::*;
 
-pub fn list_bishop_moves<'a>(game: &'a Game, position: Position, player: Player) -> Vector<Move<'a>> {
+pub fn list_bishop_moves(game: &Game, position: Position, player: Player) -> Vector<Move<'_>> {
 	move_list::generate_moves(game, player, position, &[(1, 1), (-1, 1), (1, -1), (-1, -1)])
 }
 

@@ -29,7 +29,7 @@ fn ask_position() -> io::Result<(Position, Position)> {
 		println!("Enter start and destination positions");
 		let mut input = String::new();
 		io::stdin().read_line(&mut input)?;
-		let input_list: Vector<&str> = input.trim().split(" ").collect();
+		let input_list: Vector<&str> = input.trim().split(' ').collect();
 		if input_list.len() == 2 {
 			let tuple_result = (Position::from(input_list[0]), Position::from(input_list[1]));
 			result = match tuple_result {

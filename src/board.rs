@@ -21,15 +21,15 @@ pub struct Piece {
 }
 
 impl Piece {
-    pub fn new(piece_type: PieceType, player: Player) -> Piece {
-        Piece {piece_type: piece_type, player: player}
+    pub fn new(piece_type: PieceType, player: Player) -> Self {
+        Self {piece_type, player}
     }
 
-    pub fn piece_type(&self) -> PieceType {
+    pub fn piece_type(self) -> PieceType {
         self.piece_type
     }
 
-    pub fn player(&self) -> Player {
+    pub fn player(self) -> Player {
         self.player
     }
 }
@@ -41,7 +41,7 @@ pub enum Player {
 }
 
 impl Player {
-    pub fn opponent(&self) -> Player {
+    pub fn opponent(self) -> Self {
         match self {
             White => Black,
             Black => White,
@@ -57,39 +57,39 @@ pub struct Position {
 
 
 impl Position {
-    pub fn from(pos: &str) -> Option<Position> {
+    pub fn from(pos: &str) -> Option<Self> {
         lazy_static! {
             static ref POS_REGEX: Regex = Regex::new("^[a-h][1-8]$").unwrap();
         }
         if POS_REGEX.is_match(pos) {
             let bytes = pos.as_bytes();
-            Some(Position {column: bytes[0], row: bytes[1]})
+            Some(Self {column: bytes[0], row: bytes[1]})
         } else {
             None
         }
     }
 
-    pub fn from_chars(column: char, row: char) -> Option<Position> {
+    pub fn from_chars(column: char, row: char) -> Option<Self> {
         if column >= 'a' && column <= 'h' && row >= '1' && row <= '8' {
-            Some(Position{row: row as u8, column: column as u8})
+            Some(Self{row: row as u8, column: column as u8})
         } else {
             None
         }
     }
 
-    pub fn from_u8(column: u8, row: u8) -> Option<Position> {
-        if column >= 'a' as u8 && column <= 'h' as u8 && row >= '1' as u8 && row <= '8' as u8 {
-            Some(Position{row: row, column: column})
+    pub fn from_u8(column: u8, row: u8) -> Option<Self> {
+        if column >= b'a' && column <= b'h' && row >= b'1' && row <= b'8' {
+            Some(Self{row, column})
         } else {
             None
         }
     }
 
-    pub fn column(&self) -> u8 {
+    pub fn column(self) -> u8 {
         self.column
     }
 
-    pub fn row(&self) -> u8 {
+    pub fn row(self) -> u8 {
         self.row
     }
 }
@@ -109,7 +109,7 @@ pub struct Board {
 
 
 impl Board {
-    pub fn starting_position() -> Board {
+    pub fn starting_position() -> Self {
         lazy_static! {
             static ref STARTING_POS: Board = {
                 let mut board_map = HashMap::new();
@@ -195,20 +195,20 @@ impl Board {
         STARTING_POS.clone()
     }
 
-    pub fn empty() -> Board {
-        Board {squares: HashMap::new()}
+    pub fn empty() -> Self {
+        Self {squares: HashMap::new()}
     }
 
     pub fn get(&self, position: Position) -> Option<&Piece> {
         self.squares.get(&position)
     }
 
-    pub fn put(&self, position: Position, piece: Piece) -> Board {
-        Board{squares: self.squares.update(position, piece)}
+    pub fn put(&self, position: Position, piece: Piece) -> Self {
+        Self{squares: self.squares.update(position, piece)}
     }
 
-    pub fn remove(&self, position: Position) -> Board {
-        Board {squares: self.squares.without(&position)}
+    pub fn remove(&self, position: Position) -> Self {
+        Self {squares: self.squares.without(&position)}
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &(Position, Piece)> {
