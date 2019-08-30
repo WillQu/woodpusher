@@ -12,6 +12,7 @@ mod rook;
 mod bishop;
 mod queen;
 mod knight;
+mod king;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Game {
@@ -96,7 +97,7 @@ impl Game {
 					PieceType::Bishop => bishop::list_bishop_moves(self, *key, value.player()),
 					PieceType::Queen => queen::list_queen_moves(self, *key, value.player()),
 					PieceType::Knight => knight::list_knight_moves(self, *key, value.player()),
-					_ => vector![],
+					PieceType::King => king::list_king_moves(self, *key, value.player()),
 				}
 			)
             .collect()
@@ -487,6 +488,23 @@ mod tests {
 		
 		//Then
 		let expected: HashSet<Position> = ["b3", "c2"]
+			.iter()
+			.map(|pos| Position::from(pos).unwrap())
+			.collect();
+		let result_positions: HashSet<Position> = result.iter().map(|mv| mv.to).collect();
+		assert_that!(result_positions).is_equal_to(expected);
+	}
+
+	#[test]
+	fn king() {
+		// Given
+		let game = Game::from_board(Board::empty().put(Position::from("a1").unwrap(), Piece::new(PieceType::King, Player::White)), White);
+		
+		// When
+		let result = game.list_moves();
+		
+		//Then
+		let expected: HashSet<Position> = ["a2", "b1", "b2"]
 			.iter()
 			.map(|pos| Position::from(pos).unwrap())
 			.collect();
