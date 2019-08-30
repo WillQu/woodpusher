@@ -1,16 +1,17 @@
 use board::Board;
-use board::Position;
 use board::Piece;
 use board::PieceType::*;
 use board::Player::*;
+use board::Position;
 
 pub fn show_board(board: &Board) -> String {
     let mut result = String::new();
     for line in "87654321".chars() {
         for row in "abcdefgh".chars() {
-            result.push(board
-                .get(Position::from(&[row, line].iter().collect::<String>()).unwrap())
-                .map_or_else(|| '·', |piece| show_piece(*piece))
+            result.push(
+                board
+                    .get(Position::from(&[row, line].iter().collect::<String>()).unwrap())
+                    .map_or_else(|| '·', |piece| show_piece(*piece)),
             );
             result.push(' ');
         }
@@ -50,7 +51,9 @@ mod tests {
         let result = show_board(&board);
 
         // Then
-        assert_eq!(result, "♜ ♞ ♝ ♛ ♚ ♝ ♞ ♜
+        assert_eq!(
+            result,
+            "♜ ♞ ♝ ♛ ♚ ♝ ♞ ♜
 ♟ ♟ ♟ ♟ ♟ ♟ ♟ ♟
 · · · · · · · ·
 · · · · · · · ·
@@ -58,6 +61,7 @@ mod tests {
 · · · · · · · ·
 ♙ ♙ ♙ ♙ ♙ ♙ ♙ ♙
 ♖ ♘ ♗ ♕ ♔ ♗ ♘ ♖
-")
+"
+        )
     }
 }

@@ -1,27 +1,27 @@
 use board::*;
 use game::*;
 
-pub fn list_knight_moves(game: &Game, position: Position, player: Player) -> Vector<Move<'_>> {
+pub fn list_king_moves(game: &Game, position: Position, player: Player) -> Vector<Move<'_>> {
     move_list::generate_moves_one_square(
         game,
         player,
         position,
         &[
-            (1, 2),
-            (2, 1),
-            (1, -2),
-            (2, -1),
-            (-1, -2),
-            (-2, -1),
-            (-1, 2),
-            (-2, 1),
+            (0, 1),
+            (1, 0),
+            (1, 1),
+            (1, -1),
+            (0, -1),
+            (-1, -1),
+            (-1, 0),
+            (-1, 1),
         ],
     )
 }
 
 #[cfg(test)]
 mod tests {
-    use self::knight::*;
+    use self::king::*;
 
     use im::HashSet;
     use spectral::*;
@@ -36,16 +36,16 @@ mod tests {
         let game = Game::from_board(
             Board::empty().put(
                 Position::from("a1").unwrap(),
-                Piece::new(PieceType::Knight, Player::White),
+                Piece::new(PieceType::King, Player::White),
             ),
             White,
         );
 
         // When
-        let result = list_knight_moves(&game, Position::from("a1").unwrap(), White);
+        let result = list_king_moves(&game, Position::from("a1").unwrap(), White);
 
         //Then
-        let expected: HashSet<Position> = ["b3", "c2"]
+        let expected: HashSet<Position> = ["a2", "b1", "b2"]
             .iter()
             .map(|pos| Position::from(pos).unwrap())
             .collect();
@@ -59,16 +59,16 @@ mod tests {
         let game = Game::from_board(
             Board::empty().put(
                 Position::from("a8").unwrap(),
-                Piece::new(PieceType::Knight, Player::White),
+                Piece::new(PieceType::King, Player::White),
             ),
             White,
         );
 
         // When
-        let result = list_knight_moves(&game, Position::from("a8").unwrap(), White);
+        let result = list_king_moves(&game, Position::from("a8").unwrap(), White);
 
         //Then
-        let expected: HashSet<Position> = ["b6", "c7"]
+        let expected: HashSet<Position> = ["a7", "b8", "b7"]
             .iter()
             .map(|pos| Position::from(pos).unwrap())
             .collect();
@@ -82,16 +82,16 @@ mod tests {
         let game = Game::from_board(
             Board::empty().put(
                 Position::from("h8").unwrap(),
-                Piece::new(PieceType::Knight, Player::White),
+                Piece::new(PieceType::King, Player::White),
             ),
             White,
         );
 
         // When
-        let result = list_knight_moves(&game, Position::from("h8").unwrap(), White);
+        let result = list_king_moves(&game, Position::from("h8").unwrap(), White);
 
         //Then
-        let expected: HashSet<Position> = ["f7", "g6"]
+        let expected: HashSet<Position> = ["h7", "g8", "g7"]
             .iter()
             .map(|pos| Position::from(pos).unwrap())
             .collect();
@@ -105,16 +105,16 @@ mod tests {
         let game = Game::from_board(
             Board::empty().put(
                 Position::from("h1").unwrap(),
-                Piece::new(PieceType::Knight, Player::White),
+                Piece::new(PieceType::King, Player::White),
             ),
             White,
         );
 
         // When
-        let result = list_knight_moves(&game, Position::from("h1").unwrap(), White);
+        let result = list_king_moves(&game, Position::from("h1").unwrap(), White);
 
         //Then
-        let expected: HashSet<Position> = ["f2", "g3"]
+        let expected: HashSet<Position> = ["h2", "g1", "g2"]
             .iter()
             .map(|pos| Position::from(pos).unwrap())
             .collect();
