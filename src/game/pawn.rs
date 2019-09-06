@@ -33,12 +33,81 @@ pub fn list_pawn_moves(game: &Game, key: Position, player: Player) -> Vector<Mov
     positions
         .into_iter()
         .map(|position| {
-            let en_passant = if Some(position) == jump_position {
-                Some(simple_move)
-            } else {
-                None
-            };
-            game.create_move_en_passant(key, position, en_passant)
+			if Some (position) == jump_position {
+				game.create_move_en_passant(key, position, simple_move)
+			} else if position.row() == b'8' {
+				game.create_move_with_promotion(key, position, PieceType::Queen)
+			} else {
+				game.create_move(key, position)
+			}
         })
         .collect()
+}
+#[cfg(test)]
+mod tests {
+    use self::pawn::*;
+
+    use spectral::*;
+	use spectral::prelude::MappingIterAssertions;
+    
+	use game::*;
+    use board::*;
+
+	#[test]
+    fn promotion() {
+        // Given
+        let game = Game::from_board(
+            Board::empty().put(
+                Position::from("a7").unwrap(),
+                Piece::new(PieceType::Pawn, Player::White),
+            ),
+            Player::White,
+        );
+
+        // When
+        let result = list_pawn_moves(&game, Position::from("a7").unwrap(), Player::White);
+		
+		// Then
+        let expected = hashset![PieceType::Queen];
+		let promotion_result = result.iter().map(|r| r.promotion().unwrap()).collect();
+		assert_that!(promotion_result).is_equal_to(expected);
+	}
+
+	#[test]
+    fn promotion2() {
+        // Given
+        let game = Game::from_board(
+            Board::empty().put(
+                Position::from("b7").unwrap(),
+                Piece::new(PieceType::Pawn, Player::White),
+            ),
+            Player::White,
+        );
+
+        // When
+        let result = list_pawn_moves(&game, Position::from("b7").unwrap(), Player::White);
+		
+		// Then
+        let expected = hashset![PieceType::Queen];
+		let promotion_result = result.iter().map(|r| r.promotion().unwrap()).collect();
+		assert_that!(promotion_result).is_equal_to(expected);
+	}
+
+	#[test]
+    fn no_promotion() {
+        // Given
+        let game = Game::from_board(
+            Board::empty().put(
+                Position::from("a6").unwrap(),
+                Piece::new(PieceType::Pawn, Player::White),
+            ),
+            Player::White,
+        );
+
+        // When
+        let result = list_pawn_moves(&game, Position::from("a6").unwrap(), Player::White);
+		
+		// Then
+        assert_that!(result).mapped_contains(|x| x.promotion(), &None);
+	}
 }

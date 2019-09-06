@@ -106,21 +106,25 @@ impl Game {
     }
 
     fn create_move(&self, from: Position, to: Position) -> Move {
-        self.create_move_en_passant(from, to, None)
+        Move::new(self, from, to)
     }
 
     fn create_move_en_passant(
         &self,
         from: Position,
         to: Position,
-        en_passant: Option<Position>,
+        en_passant: Position,
     ) -> Move {
-        Move {
-            from,
-            to,
-            en_passant,
-            game: self,
-        }
+		Move::new_with_en_passant(self, from, to, en_passant)
+    }
+
+    fn create_move_with_promotion(
+        &self,
+        from: Position,
+        to: Position,
+        promotion: PieceType,
+    ) -> Move {
+		Move::new_with_promotion(self, from, to, promotion)
     }
 }
 
@@ -136,9 +140,22 @@ pub struct Move<'a> {
     to: Position,
     en_passant: Option<Position>,
     game: &'a Game,
+	promotion: Option<PieceType>,
 }
 
 impl<'a> Move<'a> {
+	fn new(game: &Game, from: Position, to: Position) -> Move<'_> {
+		Move{from, to, en_passant: None, game, promotion: None}
+	}
+
+	fn new_with_en_passant(game: &Game, from: Position, to: Position, en_passant: Position) -> Move<'_> {
+		Move{from, to, en_passant: Some(en_passant), game, promotion: None}
+	}
+
+	fn new_with_promotion(game: &Game, from: Position, to: Position, promotion: PieceType) -> Move<'_> {
+		Move{from, to, en_passant: None, game, promotion: Some(promotion)}
+	}
+	
     fn new_game(&self) -> Game {
         let mut result = self
             .game
@@ -154,6 +171,10 @@ impl<'a> Move<'a> {
         }
         result
     }
+	
+	fn promotion(&self) -> Option<PieceType> {
+		self.promotion
+	}
 }
 
 #[cfg(test)]
@@ -339,7 +360,7 @@ mod tests {
             game.create_move_en_passant(
                 Position::from("e2").unwrap(),
                 Position::from("e4").unwrap(),
-                Some(Position::from("e3").unwrap()),
+                Position::from("e3").unwrap(),
             ),
         ]);
     }
@@ -382,7 +403,7 @@ mod tests {
             game.create_move_en_passant(
                 Position::from("e7").unwrap(),
                 Position::from("e5").unwrap(),
-                Some(Position::from("e6").unwrap()),
+                Position::from("e6").unwrap(),
             ),
         ]);
     }
@@ -427,18 +448,8 @@ mod tests {
         // Then
         assert_eq!(result.len(), 2);
         assert_that!(result).contains_all_of(&&[
-            Move {
-                from: Position::from("e2").unwrap(),
-                to: Position::from("e3").unwrap(),
-                en_passant: None,
-                game: &game,
-            },
-            Move {
-                from: Position::from("e2").unwrap(),
-                to: Position::from("e4").unwrap(),
-                en_passant: Some(Position::from("e3").unwrap()),
-                game: &game,
-            },
+			Move::new(&game, Position::from("e2").unwrap(), Position::from("e3").unwrap()),
+			Move::new_with_en_passant(&game, Position::from("e2").unwrap(), Position::from("e4").unwrap(), Position::from("e3").unwrap()),
         ]);
     }
 
@@ -466,18 +477,8 @@ mod tests {
         // Then
         assert_eq!(result.len(), 2);
         assert_that!(result).contains_all_of(&&[
-            Move {
-                from: Position::from("e4").unwrap(),
-                to: Position::from("e5").unwrap(),
-                en_passant: None,
-                game: &game,
-            },
-            Move {
-                from: Position::from("e4").unwrap(),
-                to: Position::from("d5").unwrap(),
-                en_passant: None,
-                game: &game,
-            },
+			Move::new(&game, Position::from("e4").unwrap(), Position::from("e5").unwrap()),
+			Move::new(&game, Position::from("e4").unwrap(), Position::from("d5").unwrap()),
         ]);
     }
 

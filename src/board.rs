@@ -4,7 +4,7 @@ use std::fmt::Display;
 use im::hashmap::HashMap;
 use regex::Regex;
 
-#[derive(PartialEq, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, Hash, Debug, Copy, Clone)]
 pub enum PieceType {
     King,
     Queen,
