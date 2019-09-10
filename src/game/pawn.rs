@@ -32,14 +32,22 @@ pub fn list_pawn_moves(game: &Game, key: Position, player: Player) -> Vector<Mov
 
     positions
         .into_iter()
-        .map(|position| {
-			if Some (position) == jump_position {
-				game.create_move_en_passant(key, position, simple_move)
-			} else if position.row() == b'8' {
-				game.create_move_with_promotion(key, position, PieceType::Queen)
-			} else {
-				game.create_move(key, position)
-			}
+        .flat_map(|position| {
+            if Some(position) == jump_position {
+                vector![game.create_move_en_passant(key, position, simple_move)]
+            } else if [b'1', b'8'].contains(&position.row()) {
+                [
+                    PieceType::Queen,
+                    PieceType::Rook,
+                    PieceType::Bishop,
+                    PieceType::Knight,
+                ]
+                .iter()
+                .map(|piece_type| game.create_move_with_promotion(key, position, *piece_type))
+                .collect()
+            } else {
+                vector![game.create_move(key, position)]
+            }
         })
         .collect()
 }
@@ -47,13 +55,13 @@ pub fn list_pawn_moves(game: &Game, key: Position, player: Player) -> Vector<Mov
 mod tests {
     use self::pawn::*;
 
+    use spectral::prelude::MappingIterAssertions;
     use spectral::*;
-	use spectral::prelude::MappingIterAssertions;
-    
-	use game::*;
-    use board::*;
 
-	#[test]
+    use board::*;
+    use game::*;
+
+    #[test]
     fn promotion() {
         // Given
         let game = Game::from_board(
@@ -66,14 +74,19 @@ mod tests {
 
         // When
         let result = list_pawn_moves(&game, Position::from("a7").unwrap(), Player::White);
-		
-		// Then
-        let expected = hashset![PieceType::Queen];
-		let promotion_result = result.iter().map(|r| r.promotion().unwrap()).collect();
-		assert_that!(promotion_result).is_equal_to(expected);
-	}
 
-	#[test]
+        // Then
+        let expected = hashset![
+            PieceType::Queen,
+            PieceType::Rook,
+            PieceType::Bishop,
+            PieceType::Knight
+        ];
+        let promotion_result = result.iter().map(|r| r.promotion().unwrap()).collect();
+        assert_that!(promotion_result).is_equal_to(expected);
+    }
+
+    #[test]
     fn promotion2() {
         // Given
         let game = Game::from_board(
@@ -86,14 +99,19 @@ mod tests {
 
         // When
         let result = list_pawn_moves(&game, Position::from("b7").unwrap(), Player::White);
-		
-		// Then
-        let expected = hashset![PieceType::Queen];
-		let promotion_result = result.iter().map(|r| r.promotion().unwrap()).collect();
-		assert_that!(promotion_result).is_equal_to(expected);
-	}
 
-	#[test]
+        // Then
+        let expected = hashset![
+            PieceType::Queen,
+            PieceType::Rook,
+            PieceType::Bishop,
+            PieceType::Knight
+        ];
+        let promotion_result = result.iter().map(|r| r.promotion().unwrap()).collect();
+        assert_that!(promotion_result).is_equal_to(expected);
+    }
+
+    #[test]
     fn no_promotion() {
         // Given
         let game = Game::from_board(
@@ -106,8 +124,33 @@ mod tests {
 
         // When
         let result = list_pawn_moves(&game, Position::from("a6").unwrap(), Player::White);
-		
-		// Then
+
+        // Then
         assert_that!(result).mapped_contains(|x| x.promotion(), &None);
-	}
+    }
+
+    #[test]
+    fn promotion_black() {
+        // Given
+        let game = Game::from_board(
+            Board::empty().put(
+                Position::from("a2").unwrap(),
+                Piece::new(PieceType::Pawn, Player::Black),
+            ),
+            Player::Black,
+        );
+
+        // When
+        let result = list_pawn_moves(&game, Position::from("a2").unwrap(), Player::Black);
+
+        // Then
+        let expected = hashset![
+            PieceType::Queen,
+            PieceType::Rook,
+            PieceType::Bishop,
+            PieceType::Knight
+        ];
+        let promotion_result = result.iter().map(|r| r.promotion().unwrap()).collect();
+        assert_that!(promotion_result).is_equal_to(expected);
+    }
 }
