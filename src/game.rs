@@ -47,9 +47,18 @@ impl Game {
     }
 
     pub fn execute_move(&self, from: Position, to: Position) -> Result<Self, String> {
+        self.execute_promotion(from, to, None)
+    }
+
+    pub fn execute_promotion(
+        &self,
+        from: Position,
+        to: Position,
+        promotion: Option<PieceType>,
+    ) -> Result<Self, String> {
         self.list_moves()
             .iter()
-            .find(|mv| mv.from == from && mv.to == to)
+            .find(|mv| mv.from == from && mv.to == to && mv.promotion == promotion)
             .map(Move::new_game)
             .ok_or_else(|| "Illegal move".to_string())
     }
@@ -59,25 +68,29 @@ impl Game {
         from: Position,
         to: Position,
         en_passant: Option<Position>,
+        promotion: Option<PieceType>,
     ) -> Result<Self, String> {
         self.get_piece_at(from).map_or_else(
             || Err(format!("No piece at {}", from)),
             |piece| {
-                self.apply_move_to_piece(from, to, *piece)
+                self.apply_promotion_to_piece(from, to, *piece, promotion)
                     .map(|game| Self { en_passant, ..game })
             },
         )
     }
 
-    fn apply_move_to_piece(
+    fn apply_promotion_to_piece(
         &self,
         from: Position,
         to: Position,
         piece: Piece,
+        promotion: Option<PieceType>,
     ) -> Result<Self, String> {
         if piece.player() == self.turn() {
+            let new_piece =
+                promotion.map_or(piece, |piece_type| Piece::new(piece_type, piece.player()));
             Ok(Self {
-                board: self.board.put(to, piece).remove(from),
+                board: self.board.put(to, new_piece).remove(from),
                 player_turn: self.turn().opponent(),
                 en_passant: Option::None,
             })
@@ -182,7 +195,7 @@ impl<'a> Move<'a> {
     fn new_game(&self) -> Game {
         let mut result = self
             .game
-            .apply_move_with_en_passant(self.from, self.to, self.en_passant)
+            .apply_move_with_en_passant(self.from, self.to, self.en_passant, self.promotion)
             .unwrap_or_else(|_| panic!("Invalid move {:?}", self));
         if Some(self.to) == self.game.en_passant {
             let position_to_remove =
@@ -193,10 +206,6 @@ impl<'a> Move<'a> {
             };
         }
         result
-    }
-
-    fn promotion(&self) -> Option<PieceType> {
-        self.promotion
     }
 }
 
@@ -732,5 +741,38 @@ mod tests {
             .collect();
         let result_positions: HashSet<Position> = result.iter().map(|mv| mv.to).collect();
         assert_that!(result_positions).is_equal_to(expected);
+    }
+
+    #[test]
+    fn execute_promotion() {
+        // Given
+        let board = Board::empty().put(
+            Position::from("e7").unwrap(),
+            Piece::new(PieceType::Pawn, Player::White),
+        );
+        let game = Game {
+            board,
+            player_turn: Player::White,
+            en_passant: None,
+        };
+
+        // When
+        let result = game.execute_promotion(
+            Position::from("e7").unwrap(),
+            Position::from("e8").unwrap(),
+            Some(PieceType::Queen),
+        );
+
+        // Then
+        let new_board = Board::empty().put(
+            Position::from("e8").unwrap(),
+            Piece::new(PieceType::Queen, Player::White),
+        );
+        let expected_new_game = Game {
+            board: new_board,
+            player_turn: Player::Black,
+            en_passant: None,
+        };
+        assert_eq!(result.unwrap(), expected_new_game);
     }
 }

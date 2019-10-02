@@ -82,7 +82,7 @@ mod tests {
             PieceType::Bishop,
             PieceType::Knight
         ];
-        let promotion_result = result.iter().map(|r| r.promotion().unwrap()).collect();
+        let promotion_result = result.iter().map(|r| r.promotion.unwrap()).collect();
         assert_that!(promotion_result).is_equal_to(expected);
     }
 
@@ -107,7 +107,7 @@ mod tests {
             PieceType::Bishop,
             PieceType::Knight
         ];
-        let promotion_result = result.iter().map(|r| r.promotion().unwrap()).collect();
+        let promotion_result = result.iter().map(|r| r.promotion.unwrap()).collect();
         assert_that!(promotion_result).is_equal_to(expected);
     }
 
@@ -126,7 +126,7 @@ mod tests {
         let result = list_pawn_moves(&game, Position::from("a6").unwrap(), Player::White);
 
         // Then
-        assert_that!(result).mapped_contains(|x| x.promotion(), &None);
+        assert_that!(result).mapped_contains(|x| x.promotion, &None);
     }
 
     #[test]
@@ -150,7 +150,7 @@ mod tests {
             PieceType::Bishop,
             PieceType::Knight
         ];
-        let promotion_result = result.iter().map(|r| r.promotion().unwrap()).collect();
+        let promotion_result = result.iter().map(|r| r.promotion.unwrap()).collect();
         assert_that!(promotion_result).is_equal_to(expected);
     }
 }
