@@ -134,6 +134,16 @@ impl Game {
     ) -> Move {
         Move::new_with_promotion(self, from, to, promotion)
     }
+
+    fn is_check(&self, position: Position) -> bool {
+        Game {
+            player_turn: self.player_turn.opponent(),
+            ..self.clone()
+        }
+        .list_moves()
+        .into_iter()
+        .any(|mv| mv.to == position)
+    }
 }
 
 impl Default for Game {
@@ -774,5 +784,68 @@ mod tests {
             en_passant: None,
         };
         assert_eq!(result.unwrap(), expected_new_game);
+    }
+
+    #[test]
+    fn is_black_check() {
+        // Given
+        let board = Board::empty()
+            .put(
+                Position::from("e3").unwrap(),
+                Piece::new(PieceType::Pawn, Player::White),
+            )
+            .put(
+                Position::from("d4").unwrap(),
+                Piece::new(PieceType::King, Player::Black),
+            );
+        let game = Game::from_board(board, Player::Black);
+
+        // When
+        let result = game.is_check(Position::from("d4").unwrap());
+
+        // Then
+        assert_that!(result).is_true();
+    }
+
+    #[test]
+    fn is_not_check() {
+        // Given
+        let board = Board::empty()
+            .put(
+                Position::from("e3").unwrap(),
+                Piece::new(PieceType::Pawn, Player::White),
+            )
+            .put(
+                Position::from("d5").unwrap(),
+                Piece::new(PieceType::King, Player::Black),
+            );
+        let game = Game::from_board(board, Player::Black);
+
+        // When
+        let result = game.is_check(Position::from("d5").unwrap());
+
+        // Then
+        assert_that!(result).is_false();
+    }
+
+    #[test]
+    fn is_white_check() {
+        // Given
+        let board = Board::empty()
+            .put(
+                Position::from("e3").unwrap(),
+                Piece::new(PieceType::Pawn, Player::Black),
+            )
+            .put(
+                Position::from("d2").unwrap(),
+                Piece::new(PieceType::King, Player::White),
+            );
+        let game = Game::from_board(board, Player::White);
+
+        // When
+        let result = game.is_check(Position::from("d2").unwrap());
+
+        // Then
+        assert_that!(result).is_true();
     }
 }
