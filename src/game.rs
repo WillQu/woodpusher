@@ -19,6 +19,8 @@ pub struct Game {
     board: Board,
     player_turn: Player,
     en_passant: Option<Position>,
+	castle_a: bool,
+	castle_h: bool,
 }
 
 impl Game {
@@ -27,6 +29,8 @@ impl Game {
             board: Board::starting_position(),
             player_turn: Player::White,
             en_passant: Option::None,
+			castle_a: true,
+			castle_h: true,
         }
     }
 
@@ -35,8 +39,20 @@ impl Game {
             board,
             player_turn: player,
             en_passant: Option::None,
+			castle_a: true,
+			castle_h: true,
         }
     }
+	
+	pub fn from_board_with_castle(board: Board, player: Player, castle_a: bool, castle_h: bool) -> Self {
+        Self {
+            board,
+            player_turn: player,
+            en_passant: Option::None,
+			castle_a,
+			castle_h,
+        }
+	}
 
     pub fn board(&self) -> &Board {
         &self.board
@@ -93,6 +109,8 @@ impl Game {
                 board: self.board.put(to, new_piece).remove(from),
                 player_turn: self.turn().opponent(),
                 en_passant: Option::None,
+				castle_a: self.castle_a,
+				castle_h: self.castle_h,
             })
         } else {
             Err(String::from("Can’t move pieces from the other player"))
@@ -544,6 +562,8 @@ mod tests {
             board,
             player_turn: Player::White,
             en_passant: Some(Position::from("d5").unwrap()),
+			castle_a: true,
+			castle_h: true,
         };
 
         // When
@@ -581,6 +601,8 @@ mod tests {
             board,
             player_turn: Player::White,
             en_passant: Some(Position::from("d5").unwrap()),
+			castle_a: true,
+			castle_h: true,
         };
 
         // When
@@ -601,6 +623,8 @@ mod tests {
             board: new_board,
             player_turn: Player::Black,
             en_passant: None,
+			castle_a: true,
+			castle_h: true,
         };
         assert_eq!(result.unwrap().new_game(), expected_new_game);
     }
@@ -786,6 +810,8 @@ mod tests {
             board,
             player_turn: Player::White,
             en_passant: None,
+			castle_a: true,
+			castle_h: true,
         };
 
         // When
@@ -804,6 +830,8 @@ mod tests {
             board: new_board,
             player_turn: Player::Black,
             en_passant: None,
+			castle_a: true,
+			castle_h: true,
         };
         assert_eq!(result.unwrap(), expected_new_game);
     }
