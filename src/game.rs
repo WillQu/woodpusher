@@ -104,6 +104,19 @@ impl Game {
     }
 
     pub fn list_moves(&self) -> Vector<Move> {
+        self.list_moves_no_check()
+            .into_iter()
+            .filter(|mov| {
+                !Game {
+                    player_turn: self.player_turn,
+                    ..mov.new_game()
+                }
+                .is_king_check()
+            })
+            .collect()
+    }
+
+    fn list_moves_no_check(&self) -> Vector<Move> {
         self.board
             .iter()
             .filter(|(_, value)| value.player() == self.turn())
@@ -140,9 +153,18 @@ impl Game {
             player_turn: self.player_turn.opponent(),
             ..self.clone()
         }
-        .list_moves()
+        .list_moves_no_check()
         .into_iter()
         .any(|mv| mv.to == position)
+    }
+
+    fn is_king_check(&self) -> bool {
+        self.board
+            .iter()
+            .find(|(_, piece)| {
+                piece.piece_type() == PieceType::King && piece.player() == self.player_turn
+            })
+            .map_or(false, |(position, _)| self.is_check(*position))
     }
 }
 
@@ -320,7 +342,7 @@ mod tests {
         let game = Game::from_board(board, Player::White);
 
         // When
-        let result = game.list_moves();
+        let result = game.list_moves_no_check();
 
         // Then
         assert_that!(result).equals_iterator(
@@ -339,7 +361,7 @@ mod tests {
         let game = Game::from_board(board, Player::White);
 
         // When
-        let result = game.list_moves();
+        let result = game.list_moves_no_check();
 
         // Then
         assert_that!(result).equals_iterator(
@@ -358,7 +380,7 @@ mod tests {
         let game = Game::from_board(board, Player::Black);
 
         // When
-        let result = game.list_moves();
+        let result = game.list_moves_no_check();
 
         // Then
         assert_that!(result).equals_iterator(
@@ -377,7 +399,7 @@ mod tests {
         let game = Game::from_board(board, Player::White);
 
         // When
-        let result = game.list_moves();
+        let result = game.list_moves_no_check();
 
         // Then
         assert_that!(result.is_empty()).is_true();
@@ -393,7 +415,7 @@ mod tests {
         let game = Game::from_board(board, Player::White);
 
         // When
-        let result: Vector<Move> = game.list_moves();
+        let result: Vector<Move> = game.list_moves_no_check();
 
         // Then
         assert_eq!(result.len(), 2);
@@ -417,7 +439,7 @@ mod tests {
         let game = Game::from_board(board, Player::White);
 
         // When
-        let result: Vector<Move> = game.list_moves();
+        let result: Vector<Move> = game.list_moves_no_check();
 
         // Then
         assert_eq!(result.len(), 4);
@@ -438,7 +460,7 @@ mod tests {
         let game = Game::from_board(board, Player::Black);
 
         // When
-        let result: Vector<Move> = game.list_moves();
+        let result: Vector<Move> = game.list_moves_no_check();
 
         // Then
         assert_eq!(result.len(), 2);
@@ -467,7 +489,7 @@ mod tests {
         let game = Game::from_board(board, Player::White);
 
         // When
-        let result = game.list_moves();
+        let result = game.list_moves_no_check();
 
         // Then
         assert_eq!(result.len(), 2);
@@ -487,7 +509,7 @@ mod tests {
         let game = Game::from_board(board, Player::White);
 
         // When
-        let result = game.list_moves();
+        let result = game.list_moves_no_check();
 
         // Then
         assert_eq!(result.len(), 2);
@@ -525,7 +547,7 @@ mod tests {
         };
 
         // When
-        let result = game.list_moves();
+        let result = game.list_moves_no_check();
 
         // Then
         assert_eq!(result.len(), 2);
@@ -562,7 +584,7 @@ mod tests {
         };
 
         // When
-        let move_list = game.list_moves();
+        let move_list = game.list_moves_no_check();
         let result = move_list
             .iter()
             .filter(|mv| {
@@ -645,7 +667,7 @@ mod tests {
         let game = Game::from_board(board, White);
 
         // When
-        let result = game.list_moves();
+        let result = game.list_moves_no_check();
 
         //Then
         let expected: HashSet<Position> = vector![
@@ -670,7 +692,7 @@ mod tests {
         );
 
         // When
-        let result = game.list_moves();
+        let result = game.list_moves_no_check();
 
         //Then
         let expected: HashSet<Position> = vector!["b2", "c3", "d4", "e5", "f6", "g7", "h8"]
@@ -693,7 +715,7 @@ mod tests {
         );
 
         // When
-        let result = game.list_moves();
+        let result = game.list_moves_no_check();
 
         //Then
         let expected: HashSet<Position> = [
@@ -719,7 +741,7 @@ mod tests {
         );
 
         // When
-        let result = game.list_moves();
+        let result = game.list_moves_no_check();
 
         //Then
         let expected: HashSet<Position> = ["b3", "c2"]
@@ -742,7 +764,7 @@ mod tests {
         );
 
         // When
-        let result = game.list_moves();
+        let result = game.list_moves_no_check();
 
         //Then
         let expected: HashSet<Position> = ["a2", "b1", "b2"]
@@ -847,5 +869,31 @@ mod tests {
 
         // Then
         assert_that!(result).is_true();
+    }
+
+    #[test]
+    fn dont_list_check_moves() {
+        // Given
+        let board = Board::empty()
+            .put(
+                Position::from("d4").unwrap(),
+                Piece::new(PieceType::King, Player::Black),
+            )
+            .put(
+                Position::from("d2").unwrap(),
+                Piece::new(PieceType::King, Player::White),
+            );
+        let game = Game::from_board(board, Player::White);
+
+        // When
+        let result = game.list_moves();
+
+        //Then
+        let expected: HashSet<Position> = ["c2", "e2", "c1", "d1", "e1"]
+            .iter()
+            .map(|pos| Position::from(pos).unwrap())
+            .collect();
+        let result_positions: HashSet<Position> = result.iter().map(|mv| mv.to).collect();
+        assert_that!(result_positions).is_equal_to(expected);
     }
 }
