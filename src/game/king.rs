@@ -2,7 +2,7 @@ use board::*;
 use game::*;
 
 pub fn list_king_moves(game: &Game, position: Position, player: Player) -> Vector<Move<'_>> {
-    let base_list = move_list::generate_moves_one_square(
+    move_list::generate_moves_one_square(
         game,
         player,
         position,
@@ -16,14 +16,23 @@ pub fn list_king_moves(game: &Game, position: Position, player: Player) -> Vecto
             (-1, 0),
             (-1, 1),
         ],
-    );
-	if position == Position::from("e1").unwrap() && game.castle_h {
-		base_list + vector![game.create_move(position, Position::from("g1").unwrap())]
-	} else if position == Position::from("e1").unwrap() && game.castle_a {
-		base_list + vector![game.create_move(position, Position::from("c1").unwrap())]
+    )
+}
+
+pub fn list_castle_moves(game: &Game, position: Position, player: Player) -> Vector<Move<'_>> {
+	let mut result = vector![];
+	let ((castle_a, castle_h), row) = if player == Player::White {
+		(game.castle_white, '1')
 	} else {
-		base_list
+		(game.castle_black, '8')
+	};
+	if position == Position::from_chars('e', row).unwrap() && castle_h && !game.is_check(Position::from_chars('f', row).unwrap()) {
+		result = result + vector![game.create_move(position, Position::from_chars('g', row).unwrap())];
 	}
+	if position == Position::from_chars('e', row).unwrap() && castle_a && !game.is_check(Position::from_chars('d', row).unwrap()) {
+		result = result + vector![game.create_move(position, Position::from_chars('c', row).unwrap())];
+	}
+	result
 }
 
 #[cfg(test)]
@@ -32,6 +41,7 @@ mod tests {
 
     use im::HashSet;
     use spectral::*;
+	use spectral::boolean::BooleanAssertions;
 
     use board::Player::*;
     use board::*;
@@ -132,7 +142,7 @@ mod tests {
     #[test]
     fn castle_h() {
         // Given
-        let game = Game::from_board(
+        let game = Game::from_board_with_castle(
             Board::empty()
                 .put(
                     Position::from("e1").unwrap(),
@@ -147,13 +157,17 @@ mod tests {
                     Piece::new(PieceType::Rook, Player::White),
                 ),
             White,
+			false,
+			true,
+			false,
+			false,
         );
 
         // When
-        let result = list_king_moves(&game, Position::from("e1").unwrap(), White);
+        let result = list_castle_moves(&game, Position::from("e1").unwrap(), White);
 
         //Then
-        let expected: HashSet<Position> = ["d1", "d2", "e2", "f2", "f1", "g1"]
+        let expected: HashSet<Position> = ["g1"]
             .iter()
             .map(|pos| Position::from(pos).unwrap())
             .collect();
@@ -181,18 +195,15 @@ mod tests {
             White,
 			false,
 			false,
+			false,
+			false,
         );
 
         // When
-        let result = list_king_moves(&game, Position::from("e1").unwrap(), White);
+        let result = list_castle_moves(&game, Position::from("e1").unwrap(), White);
 
         //Then
-        let expected: HashSet<Position> = ["d1", "d2", "e2", "f2", "f1"]
-            .iter()
-            .map(|pos| Position::from(pos).unwrap())
-            .collect();
-        let result_positions: HashSet<Position> = result.iter().map(|mv| mv.to).collect();
-        assert_that!(result_positions).is_equal_to(expected);
+        assert_that!(result.is_empty()).is_true();
     }
 
     #[test]
@@ -215,13 +226,15 @@ mod tests {
             White,
 			true,
 			false,
+			false,
+			false,
         );
 
         // When
-        let result = list_king_moves(&game, Position::from("e1").unwrap(), White);
+        let result = list_castle_moves(&game, Position::from("e1").unwrap(), White);
 
         //Then
-        let expected: HashSet<Position> = ["d1", "d2", "e2", "f2", "f1", "c1"]
+        let expected: HashSet<Position> = ["c1"]
             .iter()
             .map(|pos| Position::from(pos).unwrap())
             .collect();
@@ -253,13 +266,121 @@ mod tests {
             White,
 			true,
 			true,
+			false,
+			false,
         );
 
         // When
-        let result = list_king_moves(&game, Position::from("e1").unwrap(), White);
+        let result = list_castle_moves(&game, Position::from("e1").unwrap(), White);
 
         //Then
-        let expected: HashSet<Position> = ["d1", "d2", "e2", "f2", "f1", "c1", "g1"]
+        let expected: HashSet<Position> = ["c1", "g1"]
+            .iter()
+            .map(|pos| Position::from(pos).unwrap())
+            .collect();
+        let result_positions: HashSet<Position> = result.iter().map(|mv| mv.to).collect();
+        assert_that!(result_positions).is_equal_to(expected);
+    }
+
+    #[test]
+    fn castle_h_intermediary_check() {
+        // Given
+        let game = Game::from_board_with_castle(
+            Board::empty()
+                .put(
+                    Position::from("e1").unwrap(),
+                    Piece::new(PieceType::King, Player::White),
+                )
+                .put(
+                    Position::from("e8").unwrap(),
+                    Piece::new(PieceType::King, Player::Black),
+                )
+                .put(
+                    Position::from("h1").unwrap(),
+                    Piece::new(PieceType::Rook, Player::White),
+                )
+				.put(
+					Position::from("f8").unwrap(),
+					Piece::new(PieceType::Rook, Player::Black),
+				),
+            White,
+			false,
+			true,
+			false,
+			false,
+        );
+
+        // When
+        let result = list_castle_moves(&game, Position::from("e1").unwrap(), White);
+
+        //Then
+        assert_that!(result.is_empty()).is_true();
+    }
+
+    #[test]
+    fn castle_a_intermediary_check() {
+        // Given
+        let game = Game::from_board_with_castle (
+            Board::empty()
+                .put(
+                    Position::from("e1").unwrap(),
+                    Piece::new(PieceType::King, Player::White),
+                )
+                .put(
+                    Position::from("e8").unwrap(),
+                    Piece::new(PieceType::King, Player::Black),
+                )
+                .put(
+                    Position::from("a1").unwrap(),
+                    Piece::new(PieceType::Rook, Player::White),
+                )
+                .put(
+                    Position::from("d8").unwrap(),
+                    Piece::new(PieceType::Rook, Player::Black),
+				),
+            White,
+			true,
+			false,
+			false,
+			false,
+        );
+
+        // When
+        let result = list_castle_moves(&game, Position::from("e1").unwrap(), White);
+
+        //Then
+        assert_that!(result.is_empty()).is_true();
+    }
+
+    #[test]
+    fn castle_h_black() {
+        // Given
+        let game = Game::from_board_with_castle(
+            Board::empty()
+                .put(
+                    Position::from("e1").unwrap(),
+                    Piece::new(PieceType::King, Player::White),
+                )
+                .put(
+                    Position::from("e8").unwrap(),
+                    Piece::new(PieceType::King, Player::Black),
+                )
+                .put(
+                    Position::from("h8").unwrap(),
+                    Piece::new(PieceType::Rook, Player::Black),
+                ),
+            Black,
+			false,
+			false,
+			false,
+			true,
+        );
+
+        // When
+        let result = list_castle_moves(&game, Position::from("e8").unwrap(), Black);
+
+        //Then
+        let expected: HashSet<Position> = ["g8"]
             .iter()
             .map(|pos| Position::from(pos).unwrap())
             .collect();

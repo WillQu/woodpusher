@@ -19,38 +19,26 @@ pub struct Game {
     board: Board,
     player_turn: Player,
     en_passant: Option<Position>,
-	castle_a: bool,
-	castle_h: bool,
+	castle_white: (bool, bool),
+	castle_black: (bool, bool),
 }
 
 impl Game {
     pub fn new() -> Self {
-        Self {
-            board: Board::starting_position(),
-            player_turn: Player::White,
-            en_passant: Option::None,
-			castle_a: true,
-			castle_h: true,
-        }
+		Self::from_board(Board::starting_position(), Player::White)
     }
 
     pub fn from_board(board: Board, player: Player) -> Self {
-        Self {
-            board,
-            player_turn: player,
-            en_passant: Option::None,
-			castle_a: true,
-			castle_h: true,
-        }
+		Self::from_board_with_castle(board, player, true, true, true, true)
     }
 	
-	pub fn from_board_with_castle(board: Board, player: Player, castle_a: bool, castle_h: bool) -> Self {
+	pub fn from_board_with_castle(board: Board, player: Player, castle_a_white: bool, castle_h_white: bool, castle_a_black: bool, castle_h_black: bool) -> Self {
         Self {
             board,
             player_turn: player,
             en_passant: Option::None,
-			castle_a,
-			castle_h,
+			castle_white: (castle_a_white, castle_h_white),
+			castle_black: (castle_a_black, castle_h_black),
         }
 	}
 
@@ -109,8 +97,8 @@ impl Game {
                 board: self.board.put(to, new_piece).remove(from),
                 player_turn: self.turn().opponent(),
                 en_passant: Option::None,
-				castle_a: self.castle_a,
-				castle_h: self.castle_h,
+				castle_white: self.castle_white,
+				castle_black: self.castle_black,
             })
         } else {
             Err(String::from("Can’t move pieces from the other player"))
@@ -122,7 +110,9 @@ impl Game {
     }
 
     pub fn list_moves(&self) -> Vector<Move> {
-        self.list_moves_no_check()
+		let king_position = self.board.iter().find(|(_, piece)| piece.piece_type() == PieceType::King && piece.player() == self.player_turn).map(|(position, _)| position);
+		let castles = king_position.map_or(vector![], |position| king::list_castle_moves(self, *position, self.player_turn));
+        (self.list_moves_no_check() + castles)
             .into_iter()
             .filter(|mov| {
                 !Game {
@@ -255,8 +245,25 @@ impl<'a> Move<'a> {
                 ..result
             };
         }
-        result
+        self.finalize_castle(result)
     }
+
+	fn detect_castle(&self) -> bool {
+		let piece = self.game.board.get(self.from).expect("No piece at \"from\" position");
+		piece.piece_type() == PieceType::King && self.to.column() == ('g' as u8)
+	}
+	
+	fn finalize_castle(&self, game: Game) -> Game {
+		if self.detect_castle() {
+			Game {
+				board: game.board.remove(Position::from("h1").unwrap()).put(Position::from("f1").unwrap(), Piece::new(PieceType::Rook, game.player_turn.opponent())),
+				castle_white: (false, false),
+				..game
+			}
+		} else {
+			game
+		}
+	}
 }
 
 #[cfg(test)]
@@ -562,8 +569,8 @@ mod tests {
             board,
             player_turn: Player::White,
             en_passant: Some(Position::from("d5").unwrap()),
-			castle_a: true,
-			castle_h: true,
+			castle_white: (true, true),
+			castle_black: (true, true),
         };
 
         // When
@@ -601,8 +608,9 @@ mod tests {
             board,
             player_turn: Player::White,
             en_passant: Some(Position::from("d5").unwrap()),
-			castle_a: true,
-			castle_h: true,
+			castle_white: (true, true),
+			castle_black: (true, true),
+			
         };
 
         // When
@@ -623,8 +631,8 @@ mod tests {
             board: new_board,
             player_turn: Player::Black,
             en_passant: None,
-			castle_a: true,
-			castle_h: true,
+			castle_white: (true, true),
+			castle_black: (true, true),
         };
         assert_eq!(result.unwrap().new_game(), expected_new_game);
     }
@@ -810,8 +818,8 @@ mod tests {
             board,
             player_turn: Player::White,
             en_passant: None,
-			castle_a: true,
-			castle_h: true,
+			castle_white: (true, true),
+			castle_black: (true, true),
         };
 
         // When
@@ -830,8 +838,8 @@ mod tests {
             board: new_board,
             player_turn: Player::Black,
             en_passant: None,
-			castle_a: true,
-			castle_h: true,
+			castle_white: (true, true),
+			castle_black: (true, true),
         };
         assert_eq!(result.unwrap(), expected_new_game);
     }
@@ -923,5 +931,87 @@ mod tests {
             .collect();
         let result_positions: HashSet<Position> = result.iter().map(|mv| mv.to).collect();
         assert_that!(result_positions).is_equal_to(expected);
+    }
+	
+	#[test]
+	fn castle() {
+        // Given
+        let game = Game::from_board_with_castle(
+            Board::empty()
+                .put(
+                    Position::from("e1").unwrap(),
+                    Piece::new(PieceType::King, Player::White),
+                )
+                .put(
+                    Position::from("e8").unwrap(),
+                    Piece::new(PieceType::King, Player::Black),
+                )
+                .put(
+                    Position::from("h1").unwrap(),
+                    Piece::new(PieceType::Rook, Player::White),
+                ),
+            White,
+			false,
+			true,
+			false,
+			false,
+        );
+
+        // When
+        let result = game.list_moves();
+
+        //Then
+		assert_that!(result).matching_contains(|mv| mv.from == Position::from("e1").unwrap() && mv.to == Position::from("g1").unwrap());
+    }
+	
+	#[test]
+	fn execute_castle() {
+        // Given
+        let game = Game::from_board_with_castle(
+            Board::empty()
+                .put(
+                    Position::from("e1").unwrap(),
+                    Piece::new(PieceType::King, Player::White),
+                )
+                .put(
+                    Position::from("e8").unwrap(),
+                    Piece::new(PieceType::King, Player::Black),
+                )
+                .put(
+                    Position::from("h1").unwrap(),
+                    Piece::new(PieceType::Rook, Player::White),
+                ),
+            White,
+			false,
+			true,
+			false,
+			false,
+        );
+
+        // When
+        let result = game.execute_move(Position::from("e1").unwrap(), Position::from("g1").unwrap());
+
+        //Then
+        let expected_game = Game::from_board_with_castle(
+            Board::empty()
+                .put(
+                    Position::from("g1").unwrap(),
+                    Piece::new(PieceType::King, Player::White),
+                )
+                .put(
+                    Position::from("e8").unwrap(),
+                    Piece::new(PieceType::King, Player::Black),
+                )
+                .put(
+                    Position::from("f1").unwrap(),
+                    Piece::new(PieceType::Rook, Player::White),
+                ),
+            Black,
+			false,
+			false,
+			false,
+			false,
+        );
+		assert_eq!(result, Ok(expected_game));
     }
 }
