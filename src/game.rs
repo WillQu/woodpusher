@@ -250,13 +250,18 @@ impl<'a> Move<'a> {
 
 	fn detect_castle(&self) -> bool {
 		let piece = self.game.board.get(self.from).expect("No piece at \"from\" position");
-		piece.piece_type() == PieceType::King && self.to.column() == ('g' as u8)
+		piece.piece_type() == PieceType::King && (self.to.column() == ('g' as u8) || self.to.column() == ('c' as u8))
 	}
 	
 	fn finalize_castle(&self, game: Game) -> Game {
 		if self.detect_castle() {
+			let (rook_from, rook_to) = if self.to.column() == ('c' as u8) {
+				("a1", "c1")
+			} else {
+				("h1", "f1")
+			};
 			Game {
-				board: game.board.remove(Position::from("h1").unwrap()).put(Position::from("f1").unwrap(), Piece::new(PieceType::Rook, game.player_turn.opponent())),
+				board: game.board.remove(Position::from(rook_from).unwrap()).put(Position::from(rook_to).unwrap(), Piece::new(PieceType::Rook, game.player_turn.opponent())),
 				castle_white: (false, false),
 				..game
 			}
@@ -1004,6 +1009,57 @@ mod tests {
                 )
                 .put(
                     Position::from("f1").unwrap(),
+                    Piece::new(PieceType::Rook, Player::White),
+                ),
+            Black,
+			false,
+			false,
+			false,
+			false,
+        );
+		assert_eq!(result, Ok(expected_game));
+    }
+	
+	#[test]
+	fn execute_castle_a() {
+        // Given
+        let game = Game::from_board_with_castle(
+            Board::empty()
+                .put(
+                    Position::from("e1").unwrap(),
+                    Piece::new(PieceType::King, Player::White),
+                )
+                .put(
+                    Position::from("e8").unwrap(),
+                    Piece::new(PieceType::King, Player::Black),
+                )
+                .put(
+                    Position::from("a1").unwrap(),
+                    Piece::new(PieceType::Rook, Player::White),
+                ),
+            White,
+			true,
+			false,
+			false,
+			false,
+        );
+
+        // When
+        let result = game.execute_move(Position::from("e1").unwrap(), Position::from("c1").unwrap());
+
+        //Then
+        let expected_game = Game::from_board_with_castle(
+            Board::empty()
+                .put(
+                    Position::from("c1").unwrap(),
+                    Piece::new(PieceType::King, Player::White),
+                )
+                .put(
+                    Position::from("e8").unwrap(),
+                    Piece::new(PieceType::King, Player::Black),
+                )
+                .put(
+                    Position::from("d1").unwrap(),
                     Piece::new(PieceType::Rook, Player::White),
                 ),
             Black,
