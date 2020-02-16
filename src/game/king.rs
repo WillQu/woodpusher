@@ -20,19 +20,27 @@ pub fn list_king_moves(game: &Game, position: Position, player: Player) -> Vecto
 }
 
 pub fn list_castle_moves(game: &Game, position: Position, player: Player) -> Vector<Move<'_>> {
-	let mut result = vector![];
-	let ((castle_a, castle_h), row) = if player == Player::White {
-		(game.castle_white, '1')
-	} else {
-		(game.castle_black, '8')
-	};
-	if position == Position::from_chars('e', row).unwrap() && castle_h && !game.is_check(Position::from_chars('f', row).unwrap()) {
-		result = result + vector![game.create_move(position, Position::from_chars('g', row).unwrap())];
-	}
-	if position == Position::from_chars('e', row).unwrap() && castle_a && !game.is_check(Position::from_chars('d', row).unwrap()) {
-		result = result + vector![game.create_move(position, Position::from_chars('c', row).unwrap())];
-	}
-	result
+    let mut result = vector![];
+    let ((castle_a, castle_h), row) = if player == Player::White {
+        (game.castle_white, '1')
+    } else {
+        (game.castle_black, '8')
+    };
+    if position == Position::from_chars('e', row).unwrap()
+        && castle_h
+        && !game.is_check(Position::from_chars('f', row).unwrap())
+    {
+        result =
+            result + vector![game.create_move(position, Position::from_chars('g', row).unwrap())];
+    }
+    if position == Position::from_chars('e', row).unwrap()
+        && castle_a
+        && !game.is_check(Position::from_chars('d', row).unwrap())
+    {
+        result =
+            result + vector![game.create_move(position, Position::from_chars('c', row).unwrap())];
+    }
+    result
 }
 
 #[cfg(test)]
@@ -40,8 +48,8 @@ mod tests {
     use self::king::*;
 
     use im::HashSet;
+    use spectral::boolean::BooleanAssertions;
     use spectral::*;
-	use spectral::boolean::BooleanAssertions;
 
     use board::Player::*;
     use board::*;
@@ -157,10 +165,10 @@ mod tests {
                     Piece::new(PieceType::Rook, Player::White),
                 ),
             White,
-			false,
-			true,
-			false,
-			false,
+            false,
+            true,
+            false,
+            false,
         );
 
         // When
@@ -193,10 +201,10 @@ mod tests {
                     Piece::new(PieceType::Rook, Player::White),
                 ),
             White,
-			false,
-			false,
-			false,
-			false,
+            false,
+            false,
+            false,
+            false,
         );
 
         // When
@@ -209,7 +217,7 @@ mod tests {
     #[test]
     fn castle_a() {
         // Given
-        let game = Game::from_board_with_castle (
+        let game = Game::from_board_with_castle(
             Board::empty()
                 .put(
                     Position::from("e1").unwrap(),
@@ -224,10 +232,10 @@ mod tests {
                     Piece::new(PieceType::Rook, Player::White),
                 ),
             White,
-			true,
-			false,
-			false,
-			false,
+            true,
+            false,
+            false,
+            false,
         );
 
         // When
@@ -245,7 +253,7 @@ mod tests {
     #[test]
     fn castle_both() {
         // Given
-        let game = Game::from_board_with_castle (
+        let game = Game::from_board_with_castle(
             Board::empty()
                 .put(
                     Position::from("e1").unwrap(),
@@ -264,10 +272,10 @@ mod tests {
                     Piece::new(PieceType::Rook, Player::White),
                 ),
             White,
-			true,
-			true,
-			false,
-			false,
+            true,
+            true,
+            false,
+            false,
         );
 
         // When
@@ -299,15 +307,15 @@ mod tests {
                     Position::from("h1").unwrap(),
                     Piece::new(PieceType::Rook, Player::White),
                 )
-				.put(
-					Position::from("f8").unwrap(),
-					Piece::new(PieceType::Rook, Player::Black),
-				),
+                .put(
+                    Position::from("f8").unwrap(),
+                    Piece::new(PieceType::Rook, Player::Black),
+                ),
             White,
-			false,
-			true,
-			false,
-			false,
+            false,
+            true,
+            false,
+            false,
         );
 
         // When
@@ -320,7 +328,7 @@ mod tests {
     #[test]
     fn castle_a_intermediary_check() {
         // Given
-        let game = Game::from_board_with_castle (
+        let game = Game::from_board_with_castle(
             Board::empty()
                 .put(
                     Position::from("e1").unwrap(),
@@ -337,12 +345,12 @@ mod tests {
                 .put(
                     Position::from("d8").unwrap(),
                     Piece::new(PieceType::Rook, Player::Black),
-				),
+                ),
             White,
-			true,
-			false,
-			false,
-			false,
+            true,
+            false,
+            false,
+            false,
         );
 
         // When
@@ -370,10 +378,10 @@ mod tests {
                     Piece::new(PieceType::Rook, Player::Black),
                 ),
             Black,
-			false,
-			false,
-			false,
-			true,
+            false,
+            false,
+            false,
+            true,
         );
 
         // When
