@@ -6,6 +6,7 @@ use std::io;
 use im::Vector;
 
 use woodpusher::board::Position;
+use woodpusher::engine;
 use woodpusher::game::Game;
 use woodpusher::game_cli;
 
@@ -13,12 +14,12 @@ fn main() -> io::Result<()> {
     let mut game = Game::new();
     while !game.list_moves().is_empty() {
         println!("{}", game_cli::show_board(game.board()));
-        let (from, to) = ask_position()?;
-        let game_result = game.execute_move(from, to);
-        game = match game_result {
-            Ok(g) => g,
-            Err(_) => game,
-        }
+        game = match engine::select_move(&game) {
+            Some(mv) => mv.new_game(),
+            None => game,
+        };
+        let mut input = String::new();
+        io::stdin().read_line(&mut input)?;
     }
     Ok(())
 }

@@ -192,8 +192,14 @@ impl Game {
 
     fn disable_castle(&self, player: Player) -> Game {
         match player {
-            Player::White => Game { castle_white: (false, false), ..self.clone() },
-            Player::Black => Game { castle_black: (false, false), ..self.clone() },
+            Player::White => Game {
+                castle_white: (false, false),
+                ..self.clone()
+            },
+            Player::Black => Game {
+                castle_black: (false, false),
+                ..self.clone()
+            },
         }
     }
 }
@@ -254,7 +260,7 @@ impl<'a> Move<'a> {
         }
     }
 
-    fn new_game(&self) -> Game {
+    pub fn new_game(&self) -> Game {
         let mut result = self
             .game
             .apply_move_with_en_passant(self.from, self.to, self.en_passant, self.promotion)
@@ -288,20 +294,35 @@ impl<'a> Move<'a> {
                 (b'h', b'f')
             };
             Game {
-                board: game.board.remove(Position::from_u8(rook_from, self.to.row()).unwrap()).put(
-                    Position::from_u8(rook_to, self.to.row()).unwrap(),
-                    Piece::new(PieceType::Rook, game.player_turn.opponent()),
-                ),
+                board: game
+                    .board
+                    .remove(Position::from_u8(rook_from, self.to.row()).unwrap())
+                    .put(
+                        Position::from_u8(rook_to, self.to.row()).unwrap(),
+                        Piece::new(PieceType::Rook, game.player_turn.opponent()),
+                    ),
                 ..game.disable_castle(game.player_turn.opponent())
             }
         } else if self.from == Position::from("h1").unwrap() {
-            Game { castle_white: (game.castle_white.0, false), ..game }
+            Game {
+                castle_white: (game.castle_white.0, false),
+                ..game
+            }
         } else if self.from == Position::from("a1").unwrap() {
-            Game { castle_white: (false, game.castle_white.1), ..game }
+            Game {
+                castle_white: (false, game.castle_white.1),
+                ..game
+            }
         } else if self.from == Position::from("h8").unwrap() {
-            Game { castle_black: (game.castle_black.0, false), ..game }
+            Game {
+                castle_black: (game.castle_black.0, false),
+                ..game
+            }
         } else if self.from == Position::from("a8").unwrap() {
-            Game { castle_black: (false, game.castle_black.1), ..game }
+            Game {
+                castle_black: (false, game.castle_black.1),
+                ..game
+            }
         } else {
             game
         }

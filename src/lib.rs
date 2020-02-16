@@ -8,5 +8,6 @@ extern crate lazy_static;
 extern crate spectral;
 
 pub mod board;
+pub mod engine;
 pub mod game;
 pub mod game_cli;
