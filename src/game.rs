@@ -53,7 +53,7 @@ impl Game {
         &self.board
     }
 
-    fn turn(&self) -> Player {
+    pub fn turn(&self) -> Player {
         self.player_turn
     }
 
@@ -201,6 +201,10 @@ impl Game {
                 ..self.clone()
             },
         }
+    }
+
+    pub fn list_pieces(&self) -> Vector<Piece> {
+        self.board.iter().map(|(_, piece)| *piece).collect()
     }
 }
 

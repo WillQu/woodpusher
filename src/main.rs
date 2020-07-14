@@ -14,9 +14,9 @@ fn main() -> io::Result<()> {
     let mut game = Game::new();
     while !game.list_moves().is_empty() {
         println!("{}", game_cli::show_board(game.board()));
-        game = match engine::select_move(&game) {
-            Some(mv) => mv.new_game(),
-            None => game,
+        game = {
+            let moves = engine::select_move(&game);
+            moves.head().map_or(game.clone(), |mv| mv.new_game())
         };
         let mut input = String::new();
         io::stdin().read_line(&mut input)?;
