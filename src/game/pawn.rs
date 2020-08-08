@@ -6,15 +6,23 @@ pub fn list_pawn_moves(game: &Game, key: Position, player: Player) -> Vector<Mov
         Player::White => i + 1,
         Player::Black => i - 1,
     };
-    let simple_move = Position::from_u8(key.column(), incr(key.row())).unwrap();
-    let mut positions = vector![simple_move];
     let mut jump_position = None;
-    if (game.turn() == Player::White && key.row() == b'2')
-        || (game.turn() == Player::Black && key.row() == b'7')
-    {
-        jump_position = Some(Position::from_u8(key.column(), incr(incr(key.row()))).unwrap());
-        positions.push_back(jump_position.unwrap());
-    }
+    let simple_move = Position::from_u8(key.column(), incr(key.row())).unwrap();
+    let mut positions = if game.board().get(simple_move).is_none() {
+        let mut advances = vector![simple_move];
+        if (game.turn() == Player::White && key.row() == b'2')
+            || (game.turn() == Player::Black && key.row() == b'7')
+        {
+            let computed_jump = Position::from_u8(key.column(), incr(incr(key.row()))).unwrap();
+            if game.board().get(computed_jump).is_none() {
+                advances.push_back(computed_jump);
+                jump_position = Some(computed_jump);
+            };
+        };
+        advances
+    } else {
+        vector![]
+    };
     let captures = vector![
         Position::from_u8(key.column() - 1, incr(key.row())),
         Position::from_u8(key.column() + 1, incr(key.row())),
@@ -51,10 +59,12 @@ pub fn list_pawn_moves(game: &Game, key: Position, player: Player) -> Vector<Mov
         })
         .collect()
 }
+
 #[cfg(test)]
 mod tests {
     use self::pawn::*;
 
+    use spectral::prelude::ContainingIntoIterAssertions;
     use spectral::prelude::MappingIterAssertions;
     use spectral::*;
 
@@ -152,5 +162,53 @@ mod tests {
         ];
         let promotion_result = result.iter().map(|r| r.promotion.unwrap()).collect();
         assert_that!(promotion_result).is_equal_to(expected);
+    }
+
+    #[test]
+    fn no_capture() {
+        // Given
+        let game = Game::from_board(
+            Board::empty()
+                .put(
+                    Position::from("e6").unwrap(),
+                    Piece::new(PieceType::Pawn, Player::White),
+                )
+                .put(
+                    Position::from("e7").unwrap(),
+                    Piece::new(PieceType::Pawn, Player::Black),
+                ),
+            Player::Black,
+        );
+
+        // When
+        let result = list_pawn_moves(&game, Position::from("e7").unwrap(), Player::Black);
+
+        // Then
+        assert_that!(result.iter().map(|mv| mv.to).collect::<Vec<Position>>())
+            .does_not_contain(&Position::from("e6").unwrap())
+    }
+
+    #[test]
+    fn no_capture_on_start() {
+        // Given
+        let game = Game::from_board(
+            Board::empty()
+                .put(
+                    Position::from("e5").unwrap(),
+                    Piece::new(PieceType::Pawn, Player::White),
+                )
+                .put(
+                    Position::from("e7").unwrap(),
+                    Piece::new(PieceType::Pawn, Player::Black),
+                ),
+            Player::Black,
+        );
+
+        // When
+        let result = list_pawn_moves(&game, Position::from("e7").unwrap(), Player::Black);
+
+        // Then
+        assert_that!(result.iter().map(|mv| mv.to).collect::<Vec<Position>>())
+            .does_not_contain(&Position::from("e5").unwrap())
     }
 }
