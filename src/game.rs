@@ -124,7 +124,7 @@ impl Game {
                 piece.piece_type() == PieceType::King && piece.player() == self.player_turn
             })
             .map(|(position, _)| position);
-        let castles = king_position.map_or(vector![], |position| {
+        let castles = king_position.map_or(Vector::new(), |position| {
             king::list_castle_moves(self, *position, self.player_turn)
         });
         (self.list_moves_no_check() + castles)
@@ -188,6 +188,14 @@ impl Game {
                 piece.piece_type() == PieceType::King && piece.player() == self.player_turn
             })
             .map_or(false, |(position, _)| self.is_check(*position))
+    }
+
+    pub fn is_stalemate(&self) -> bool {
+        self.list_moves().is_empty() && !self.is_king_check()
+    }
+
+    pub fn is_mate(&self) -> bool {
+        self.list_moves().is_empty() && self.is_king_check()
     }
 
     fn disable_castle(&self, player: Player) -> Game {

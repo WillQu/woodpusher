@@ -273,7 +273,7 @@ impl Board {
         }
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = &(Position, Piece)> {
+    pub fn iter(&self) -> impl Iterator<Item = (&Position, &Piece)> {
         self.squares.iter()
     }
 }
