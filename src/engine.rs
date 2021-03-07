@@ -1,4 +1,5 @@
 use im::Vector;
+use rayon::prelude::*;
 
 use board::Piece;
 use board::PieceType;
@@ -27,13 +28,19 @@ fn minimax(game: &Game, depth: i32) -> i32 {
         } else if game.turn() == Player::White {
             candidates
                 .iter()
+                .collect::<Vec<_>>()
+                .par_iter()
                 .map(|mv| minimax(&mv.new_game(), depth - 1))
-                .fold(i32::MIN, i32::max)
+                .max()
+                .unwrap_or(i32::MIN)
         } else {
             candidates
                 .iter()
+                .collect::<Vec<_>>()
+                .par_iter()
                 .map(|mv| minimax(&mv.new_game(), depth - 1))
-                .fold(i32::MAX, i32::min)
+                .min()
+                .unwrap_or(i32::MAX)
         }
     }
 }

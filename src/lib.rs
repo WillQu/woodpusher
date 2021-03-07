@@ -3,6 +3,7 @@ extern crate im;
 extern crate regex;
 #[macro_use]
 extern crate lazy_static;
+extern crate rayon;
 
 #[cfg(test)]
 extern crate spectral;
