@@ -57,6 +57,13 @@ impl Game {
         self.player_turn
     }
 
+    pub fn set_turn(&self, player: Player) -> Self {
+        Self {
+            player_turn: player,
+            ..self.clone()
+        }
+    }
+
     pub fn execute_move(&self, from: Position, to: Position) -> Result<Self, String> {
         self.execute_promotion(from, to, None)
     }
@@ -142,8 +149,8 @@ impl Game {
     fn list_moves_no_check(&self) -> Vector<Move> {
         self.board
             .iter()
-            .filter(|(_, value)| value.player() == self.turn())
-            .flat_map(|(key, value)| match value.piece_type() {
+            .filter(move |(_, value)| value.player() == self.turn())
+            .flat_map(move |(key, value)| match value.piece_type() {
                 PieceType::Pawn => pawn::list_pawn_moves(self, *key, value.player()),
                 PieceType::Rook => rook::list_rook_moves(self, *key, value.player()),
                 PieceType::Bishop => bishop::list_bishop_moves(self, *key, value.player()),
@@ -172,13 +179,27 @@ impl Game {
     }
 
     fn is_check(&self, position: Position) -> bool {
-        Game {
-            player_turn: self.player_turn.opponent(),
-            ..self.clone()
-        }
-        .list_moves_no_check()
-        .into_iter()
-        .any(|mv| mv.to == position)
+        let player = self.player_turn;
+        let opp = player.opponent();
+        let mut result = pawn::list_pawn_moves(self, position, player)
+            .iter()
+            .any(|m| self.get_piece_at(m.to) == Some(&Piece::new(PieceType::Pawn, opp)));
+        result |= rook::list_rook_moves(self, position, player)
+            .iter()
+            .any(|m| self.get_piece_at(m.to) == Some(&Piece::new(PieceType::Rook, opp)));
+        result |= knight::list_knight_moves(self, position, player)
+            .iter()
+            .any(|m| self.get_piece_at(m.to) == Some(&Piece::new(PieceType::Knight, opp)));
+        result |= bishop::list_bishop_moves(self, position, player)
+            .iter()
+            .any(|m| self.get_piece_at(m.to) == Some(&Piece::new(PieceType::Bishop, opp)));
+        result |= queen::list_queen_moves(self, position, player)
+            .iter()
+            .any(|m| self.get_piece_at(m.to) == Some(&Piece::new(PieceType::Queen, opp)));
+        result |= king::list_king_moves(self, position, player)
+            .iter()
+            .any(|m| self.get_piece_at(m.to) == Some(&Piece::new(PieceType::King, opp)));
+        result
     }
 
     fn is_king_check(&self) -> bool {
@@ -294,7 +315,8 @@ impl<'a> Move<'a> {
             .board
             .get(self.from)
             .expect("No piece at \"from\" position");
-        piece.piece_type() == PieceType::King
+        self.from.column() == ('e' as u8)
+            && piece.piece_type() == PieceType::King
             && (self.to.column() == ('g' as u8) || self.to.column() == ('c' as u8))
     }
 
@@ -325,6 +347,11 @@ impl<'a> Move<'a> {
                 castle_white: (false, game.castle_white.1),
                 ..game
             }
+        } else if self.from == Position::from("e1").unwrap() {
+            Game {
+                castle_white: (false, false),
+                ..game
+            }
         } else if self.from == Position::from("h8").unwrap() {
             Game {
                 castle_black: (game.castle_black.0, false),
@@ -333,6 +360,11 @@ impl<'a> Move<'a> {
         } else if self.from == Position::from("a8").unwrap() {
             Game {
                 castle_black: (false, game.castle_black.1),
+                ..game
+            }
+        } else if self.from == Position::from("e8").unwrap() {
+            Game {
+                castle_black: (false, false),
                 ..game
             }
         } else {

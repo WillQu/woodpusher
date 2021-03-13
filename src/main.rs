@@ -18,8 +18,6 @@ fn main() -> io::Result<()> {
             let moves = engine::select_move(&game);
             moves.head().map_or(game.clone(), |mv| mv.new_game())
         };
-        let mut input = String::new();
-        io::stdin().read_line(&mut input)?;
     }
     Ok(())
 }
