@@ -28,6 +28,12 @@ pub fn list_castle_moves(game: &Game, position: Position, player: Player) -> Vec
     };
     if position == Position::from_chars('e', row).unwrap()
         && castle_h
+        && game
+            .get_piece_at(Position::from_chars('g', row).unwrap())
+            .is_none()
+        && game
+            .get_piece_at(Position::from_chars('f', row).unwrap())
+            .is_none()
         && !game.is_check(Position::from_chars('f', row).unwrap())
     {
         result =
@@ -35,6 +41,12 @@ pub fn list_castle_moves(game: &Game, position: Position, player: Player) -> Vec
     }
     if position == Position::from_chars('e', row).unwrap()
         && castle_a
+        && game
+            .get_piece_at(Position::from_chars('d', row).unwrap())
+            .is_none()
+        && game
+            .get_piece_at(Position::from_chars('c', row).unwrap())
+            .is_none()
         && !game.is_check(Position::from_chars('d', row).unwrap())
     {
         result =

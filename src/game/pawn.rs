@@ -7,9 +7,9 @@ pub fn list_pawn_moves(game: &Game, key: Position, player: Player) -> Vector<Mov
         Player::Black => i - 1,
     };
     let mut jump_position = None;
-    let simple_move = Position::from_u8(key.column(), incr(key.row())).unwrap();
-    let mut positions = if game.board().get(simple_move).is_none() {
-        let mut advances = vector![simple_move];
+    let simple_move = Position::from_u8(key.column(), incr(key.row()));
+    let mut positions = if simple_move.and_then(|sm| game.board().get(sm)).is_none() {
+        let mut advances: Vector<Position> = simple_move.into_iter().collect();
         if (game.turn() == Player::White && key.row() == b'2')
             || (game.turn() == Player::Black && key.row() == b'7')
         {
@@ -42,7 +42,10 @@ pub fn list_pawn_moves(game: &Game, key: Position, player: Player) -> Vector<Mov
         .into_iter()
         .flat_map(|position| {
             if Some(position) == jump_position {
-                vector![game.create_move_en_passant(key, position, simple_move)]
+                simple_move.map_or_else(
+                    || vector![],
+                    |sm| vector![game.create_move_en_passant(key, position, sm)],
+                )
             } else if [b'1', b'8'].contains(&position.row()) {
                 [
                     PieceType::Queen,

@@ -8,58 +8,46 @@ use board::Player;
 use game::Game;
 use game::Move;
 
-pub fn select_move<'a>(game: &'a Game) -> Vector<Move<'a>> {
-    let mut result: Vec<Move<'a>> = game.list_moves().into_iter().collect();
+pub fn select_move(game: &Game) -> (Option<Move>, i32) {
     let depth = 3;
-    if game.turn() == Player::White {
-        result.sort_unstable_by(|a, b| {
-            alphaBeta(&b.new_game(), i32::MIN, i32::MAX, depth).cmp(&alphaBeta(
-                &a.new_game(),
-                i32::MIN,
-                i32::MAX,
-                depth,
-            ))
-        });
-    } else {
-        result.sort_unstable_by(|a, b| {
-            alphaBeta(&a.new_game(), i32::MIN, i32::MAX, depth).cmp(&alphaBeta(
-                &b.new_game(),
-                i32::MIN,
-                i32::MAX,
-                depth,
-            ))
-        });
-    }
-    result.into_iter().collect()
+    alpha_beta(game, i32::MIN, i32::MAX, depth)
 }
 
-fn alphaBeta(game: &Game, alpha: i32, beta: i32, depth: i32) -> i32 {
+fn alpha_beta(game: &Game, alpha: i32, beta: i32, depth: i32) -> (Option<Move>, i32) {
     if depth <= 0 {
-        score_game(game)
+        (None, score_game(game))
     } else {
         let candidates = game.list_moves();
         if candidates.len() == 0 {
-            score_game(game)
+            (None, score_game(game))
         } else if game.turn() == Player::Black {
             let mut beta = beta;
+            let mut m = None;
             for candidate in candidates {
-                let result = alphaBeta(&candidate.new_game(), alpha, beta, depth - 1);
+                let (_, result) = alpha_beta(&candidate.new_game(), alpha, beta, depth - 1);
                 if result <= alpha {
-                    return alpha;
+                    return (None, alpha);
                 }
-                beta = min(beta, result);
+                if result < beta {
+                    beta = result;
+                    m = Some(candidate);
+                }
             }
-            beta
+            (m, beta)
         } else {
             let mut alpha = alpha;
+            let mut m = None;
             for candidate in candidates {
-                let result = alphaBeta(&candidate.new_game(), alpha, beta, depth - 1);
+                let (_, result) = alpha_beta(&candidate.new_game(), alpha, beta, depth - 1);
                 if result >= beta {
-                    return beta;
+                    return (None, beta);
                 }
-                alpha = max(alpha, result);
+                if result > alpha {
+                    alpha = result;
+                    m = Some(candidate);
+                }
             }
-            alpha
+            (m, alpha)
         }
     }
 }

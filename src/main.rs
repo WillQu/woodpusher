@@ -12,11 +12,14 @@ use woodpusher::game_cli;
 
 fn main() -> io::Result<()> {
     let mut game = Game::new();
+    let mut score = 0;
     while !game.list_moves().is_empty() {
         println!("{}", game_cli::show_board(game.board()));
+        println!("Score: {}", score);
         game = {
-            let moves = engine::select_move(&game);
-            moves.head().map_or(game.clone(), |mv| mv.new_game())
+            let (m, s) = engine::select_move(&game);
+            score = s;
+            m.map_or(game.clone(), |mv| mv.new_game())
         };
     }
     Ok(())
