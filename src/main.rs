@@ -1,3 +1,6 @@
+mod uci;
+mod worker;
+
 extern crate im;
 extern crate woodpusher;
 
