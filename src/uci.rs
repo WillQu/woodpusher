@@ -1,11 +1,13 @@
 use std::sync::mpsc;
-use std::sync::mpsc::{Sender, TryRecvError};
+use std::sync::mpsc::{channel, Sender, TryRecvError};
+use std::time::Duration;
+
 use worker::Command;
 
-pub fn uci(input: &str, sender: &Sender<Command>) -> &'static str {
+pub fn uci_command(input: &str, sender: &Sender<Command>) -> &'static str {
     match input {
         "uci" => uci_result,
-        "isready" => isready_result,
+        "isready" => isready(sender),
         "position startpos" => startpos(sender),
         "go" => go(sender),
         "stop" => stop(sender),
@@ -19,6 +21,15 @@ const uci_result: &str = "id name woodpusher\n\
     uciok";
 
 const isready_result: &str = "readyok";
+
+fn isready(sender: &Sender<Command>) -> &'static str {
+    let (response_sender, response_receiver) = channel();
+    sender.send(Command::Ready(response_sender));
+    response_receiver
+        .recv_timeout(Duration::from_secs(60))
+        .expect("Engine unresponsive");
+    isready_result
+}
 
 fn startpos(sender: &Sender<Command>) -> &'static str {
     sender.send(Command::StartPos);
@@ -42,87 +53,119 @@ fn quit(sender: &Sender<Command>) -> &'static str {
 
 #[cfg(test)]
 mod tests {
+    use std::thread;
     use uci::*;
     use worker::Command;
 
     #[test]
-    fn uci_command() {
+    fn uci_start_command() -> Result<(), String> {
         // Given
         let (sender, receiver) = mpsc::channel();
 
         // When
-        let result = uci("uci", &sender);
+        let result = uci_command("uci", &sender);
 
         // Then
         assert_eq!(
             result,
             "id name woodpusher\nid author Sébastien Willmann\nuciok"
         );
-        assert_eq!(receiver.try_recv(), Err(TryRecvError::Empty));
+        match receiver.try_recv() {
+            Err(TryRecvError::Empty) => Ok(()),
+            _ => Err(String::from("Expected empty receiver")),
+        }
     }
 
     #[test]
     fn isready_command() {
         // Given
         let (sender, receiver) = mpsc::channel();
+        let (test_sender, test_receiver) = mpsc::channel();
+        let thread_sender = sender.clone();
+        let thread_test_sender = test_sender.clone();
 
         // When
-        let result = uci("isready", &sender);
+        let result = thread::spawn(move || {
+            let r = uci_command("isready", &thread_sender);
+            thread_test_sender.send(());
+            r
+        });
 
         // Then
-        assert_eq!(result, "readyok");
-        assert_eq!(receiver.try_recv(), Err(TryRecvError::Empty));
+        assert_eq!(test_receiver.try_recv(), Err(TryRecvError::Empty));
+
+        // When
+        match receiver.recv_timeout(Duration::from_secs(1)) {
+            Ok(Command::Ready(response_sender)) => response_sender.send(()),
+            x => panic!("Expected ready command, got {:?}", x),
+        };
+
+        // Then
+        assert_eq!(test_receiver.recv_timeout(Duration::from_secs(1)), Ok(()));
+        assert_eq!(result.join().unwrap(), "readyok");
     }
 
     #[test]
-    fn position_startpos_command() {
+    fn position_startpos_command() -> Result<(), String> {
         // Given
         let (sender, receiver) = mpsc::channel();
 
         // When
-        let result = uci("position startpos", &sender);
+        let result = uci_command("position startpos", &sender);
 
         // Then
         assert_eq!(result, "");
-        assert_eq!(receiver.try_recv(), Ok(Command::StartPos));
+        match receiver.try_recv() {
+            Ok(Command::StartPos) => Ok(()),
+            _ => Err(String::from("Expected command startpos")),
+        }
     }
 
     #[test]
-    fn go_command() {
+    fn go_command() -> Result<(), String> {
         // Given
         let (sender, receiver) = mpsc::channel();
 
         // When
-        let result = uci("go", &sender);
+        let result = uci_command("go", &sender);
 
         // Then
         assert_eq!(result, "");
-        assert_eq!(receiver.try_recv(), Ok(Command::Go));
+        match receiver.try_recv() {
+            Ok(Command::Go) => Ok(()),
+            _ => Err(String::from("Expected command go")),
+        }
     }
 
     #[test]
-    fn stop_command() {
+    fn stop_command() -> Result<(), String> {
         // Given
         let (sender, receiver) = mpsc::channel();
 
         // When
-        let result = uci("stop", &sender);
+        let result = uci_command("stop", &sender);
 
         // Then
         assert_eq!(result, "");
-        assert_eq!(receiver.try_recv(), Ok(Command::Stop));
+        match receiver.try_recv() {
+            Ok(Command::Stop) => Ok(()),
+            _ => Err(String::from("Expected command stop")),
+        }
     }
 
     #[test]
-    fn quit_command() {
+    fn quit_command() -> Result<(), String> {
         // Given
         let (sender, receiver) = mpsc::channel();
 
         // When
-        let result = uci("quit", &sender);
+        let result = uci_command("quit", &sender);
 
         // Then
         assert_eq!(result, "");
-        assert_eq!(receiver.try_recv(), Ok(Command::Quit));
+        match receiver.try_recv() {
+            Ok(Command::Quit) => Ok(()),
+            _ => Err(String::from("Expected command quit")),
+        }
     }
 }

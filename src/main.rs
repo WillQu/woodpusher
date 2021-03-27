@@ -20,7 +20,7 @@ fn main() -> io::Result<()> {
         println!("{}", game_cli::show_board(game.board()));
         println!("Score: {}", score);
         game = {
-            let (m, s) = engine::select_move(&game);
+            let (m, s) = engine::select_move(&game, 3);
             score = s;
             m.map_or(game.clone(), |mv| mv.new_game())
         };

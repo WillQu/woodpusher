@@ -8,8 +8,7 @@ use board::Player;
 use game::Game;
 use game::Move;
 
-pub fn select_move(game: &Game) -> (Option<Move>, i32) {
-    let depth = 3;
+pub fn select_move(game: &Game, depth: i32) -> (Option<Move>, i32) {
     alpha_beta(game, i32::MIN, i32::MAX, depth)
 }
 
@@ -105,6 +104,6 @@ mod tests {
 
     #[test]
     fn simple_run() {
-        select_move(&Game::new());
+        select_move(&Game::new(), 1);
     }
 }
